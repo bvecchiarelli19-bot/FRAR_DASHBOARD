@@ -1,0 +1,52 @@
+============================================================
+MV-FRAR HEALTH REPORT
+Generated: 2026-01-06T04:34:24.884481
+Version: 1.2.0
+============================================================
+
+DATA VALIDATION
+----------------------------------------
+Status: PASS
+Warnings: 1
+  - XLF: 6 extreme moves (>15%), showing first 5
+
+TICKER START DATES
+----------------------------------------
+  AGG: 2006-01-03
+  GLD: 2006-01-03
+  IEF: 2006-01-03
+  SPY: 2006-01-03
+  TLT: 2006-01-03
+  XLE: 2006-01-03
+  XLF: 2006-01-03
+  XLI: 2006-01-03
+  XLK: 2006-01-03
+  XLP: 2006-01-03
+  XLU: 2006-01-03
+  XLV: 2006-01-03
+
+PERFORMANCE CHECK
+----------------------------------------
+FRAR Sharpe: 0.671
+FRAR Max DD: -21.9%
+FRAR CAGR: 9.67%
+FRAR Calmar: 0.442
+
+Parity Check vs 60/40:
+  60/40 Sharpe: 0.760 | FRAR: 0.671
+  60/40 MaxDD: -28.2% | FRAR: -21.9%
+  60/40 CAGR: 8.44% | FRAR: 9.67%
+  60/40 Calmar: 0.299 | FRAR: 0.442
+  FRAR wins 3/4 metrics
+  Parity Status: PASS
+
+TURNOVER CHECK
+----------------------------------------
+Annualized Turnover: 4.74x
+Definition: sum(abs(weight_new - weight_old)), two-way
+Cost model: 10 bps round-trip per unit turnover
+NOTE: Moderate turnover (4-6x).
+
+============================================================
+END OF HEALTH REPORT
+============================================================

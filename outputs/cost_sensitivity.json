@@ -1,0 +1,63 @@
+{
+  "turnover_annualized": 4.742334800887411,
+  "cost_levels_bps": [
+    0,
+    5,
+    10,
+    15,
+    20,
+    25,
+    30
+  ],
+  "rows": [
+    {
+      "cost_bps": 0,
+      "cagr": 0.096722,
+      "sharpe": 0.6708,
+      "max_dd": -0.2188,
+      "calmar": 0.4421
+    },
+    {
+      "cost_bps": 5,
+      "cagr": 0.094351,
+      "sharpe": 0.6544,
+      "max_dd": -0.22,
+      "calmar": 0.429
+    },
+    {
+      "cost_bps": 10,
+      "cagr": 0.09198,
+      "sharpe": 0.6379,
+      "max_dd": -0.2211,
+      "calmar": 0.4159
+    },
+    {
+      "cost_bps": 15,
+      "cagr": 0.089609,
+      "sharpe": 0.6215,
+      "max_dd": -0.2223,
+      "calmar": 0.4031
+    },
+    {
+      "cost_bps": 20,
+      "cagr": 0.087238,
+      "sharpe": 0.605,
+      "max_dd": -0.2235,
+      "calmar": 0.3903
+    },
+    {
+      "cost_bps": 25,
+      "cagr": 0.084867,
+      "sharpe": 0.5886,
+      "max_dd": -0.2247,
+      "calmar": 0.3777
+    },
+    {
+      "cost_bps": 30,
+      "cagr": 0.082495,
+      "sharpe": 0.5721,
+      "max_dd": -0.2259,
+      "calmar": 0.3652
+    }
+  ]
+}

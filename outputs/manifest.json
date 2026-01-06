@@ -1,0 +1,34 @@
+{
+  "generated_at": "2026-01-06T04:34:28.033105",
+  "version": "1.2.0",
+  "param_hash": "e40a34410cee0e70",
+  "data_hash": "d3222555be043bbd",
+  "latest_signal_date": "2025-11-30",
+  "latest_signal_file": "latest_signal.json",
+  "artifacts": {
+    "latest_signal": "latest_signal.json",
+    "audit_csv": "audit.csv",
+    "weights_csv": "weights.csv",
+    "metrics_json": "metrics.json",
+    "health_report": "health_report.txt",
+    "tearsheet_pdf": "tearsheet.pdf",
+    "equity_curves_csv": "equity_curves.csv",
+    "drivers_timeseries": "drivers_timeseries.csv",
+    "cost_sensitivity": "cost_sensitivity.json"
+  },
+  "required_files": [
+    "manifest.json",
+    "latest_signal.json",
+    "metrics.json",
+    "equity_curves.csv",
+    "drivers_timeseries.csv",
+    "cost_sensitivity.json"
+  ],
+  "signal_archive_dir": "signals/",
+  "signal_archive_pattern": "signal_YYYY-MM-DD.json",
+  "rebalance_frequency": "monthly",
+  "execution_timing": "T+1 business day after month-end",
+  "cost_bps_assumption": 10,
+  "turnover_definition": "Two-way: sum(abs(weight_new - weight_old))",
+  "rebalance_buffer_pct": 5.0
+}
