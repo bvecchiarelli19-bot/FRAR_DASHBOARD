@@ -4,506 +4,517 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MV-FRAR Research Dashboard</title>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://unpkg.com/recharts@2.10.3/umd/Recharts.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-    .loading-spinner { animation: spin 1s linear infinite; }
-    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .loading { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .tab-active { border-bottom: 2px solid #3b82f6; color: #3b82f6; }
+    .regime-LOW { background: #dcfce7; color: #166534; border: 2px solid #22c55e; }
+    .regime-MID { background: #fef9c3; color: #854d0e; border: 2px solid #eab308; }
+    .regime-HIGH { background: #fed7aa; color: #9a3412; border: 2px solid #f97316; }
+    .regime-CRISIS { background: #fecaca; color: #991b1b; border: 2px solid #ef4444; }
   </style>
 </head>
-<body>
-  <div id="root"></div>
+<body class="bg-gray-50 min-h-screen">
   
-  <script type="text/babel">
-    const { useState, useEffect } = React;
-    const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, Area, Cell } = Recharts;
-
-    // ============================================================================
-    // CONFIG - Update this for your deployment
-    // ============================================================================
-    const OUTPUTS_BASE_URL = './outputs';
-
-    // ============================================================================
-    // DATA LOADING
-    // ============================================================================
-    async function loadJSON(filename) {
-      const response = await fetch(`${OUTPUTS_BASE_URL}/${filename}`);
-      if (!response.ok) throw new Error(`Failed to load ${filename}`);
-      return response.json();
-    }
-
-    async function loadCSV(filename) {
-      const response = await fetch(`${OUTPUTS_BASE_URL}/${filename}`);
-      if (!response.ok) throw new Error(`Failed to load ${filename}`);
-      const text = await response.text();
-      const lines = text.trim().split('\n');
-      const headers = lines[0].split(',');
-      return lines.slice(1).map(line => {
-        const values = line.split(',');
-        const row = {};
-        headers.forEach((h, i) => {
-          const v = values[i];
-          row[h.trim()] = v === '' ? null : (isNaN(v) ? v : parseFloat(v));
-        });
-        return row;
-      });
-    }
-
-    // ============================================================================
-    // THEME
-    // ============================================================================
-    const REGIME_COLORS = {
-      LOW: { bg: '#dcfce7', text: '#166534', border: '#22c55e' },
-      MID: { bg: '#fef9c3', text: '#854d0e', border: '#eab308' },
-      HIGH: { bg: '#fed7aa', text: '#9a3412', border: '#f97316' },
-      CRISIS: { bg: '#fecaca', text: '#991b1b', border: '#ef4444' }
-    };
-
-    const CHART_COLORS = {
-      SPY_BH: '#4A90D9', '60_40': '#F5A623', FRAR: '#2ECC71', FRAR_Net: '#27ae60',
-      risk_score: '#e74c3c', vol_percentile: '#3498db', hurst: '#1abc9c'
-    };
-
-    // ============================================================================
-    // COMPONENTS
-    // ============================================================================
-    const RegimeBadge = ({ regime, size = 'normal' }) => {
-      const colors = REGIME_COLORS[regime] || REGIME_COLORS.LOW;
-      const sizeClasses = size === 'small' ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm';
-      return (
-        <span className={`inline-flex items-center rounded-full font-semibold ${sizeClasses}`}
-          style={{ backgroundColor: colors.bg, color: colors.text, border: `2px solid ${colors.border}` }}>
-          {regime}
-        </span>
-      );
-    };
-
-    const StatusBadge = ({ status, size = 'normal' }) => {
-      const colors = { PASS: { bg: '#dcfce7', text: '#166534' }, FAIL: { bg: '#fecaca', text: '#991b1b' } };
-      const c = colors[status] || { bg: '#f3f4f6', text: '#6b7280' };
-      const sizeClasses = size === 'small' ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm';
-      return <span className={`inline-flex items-center rounded font-semibold ${sizeClasses}`} style={{ backgroundColor: c.bg, color: c.text }}>{status}</span>;
-    };
-
-    const WeightBar = ({ ticker, weight, isDefensive = false }) => {
-      const pct = (weight * 100).toFixed(1);
-      const barColor = isDefensive ? '#f59e0b' : '#3b82f6';
-      return (
-        <div className="flex items-center gap-2 py-1">
-          <span className="w-12 text-sm font-mono text-gray-600">{ticker}</span>
-          <div className="flex-1 bg-gray-100 rounded h-5 overflow-hidden">
-            <div className="h-full rounded" style={{ width: `${Math.max(weight * 100, 0)}%`, backgroundColor: weight > 0 ? barColor : '#e5e7eb' }} />
+  <!-- Loading State -->
+  <div id="loading" class="flex items-center justify-center min-h-screen">
+    <div class="text-center">
+      <div class="loading text-4xl mb-4">📊</div>
+      <p class="text-gray-600">Loading dashboard data...</p>
+    </div>
+  </div>
+  
+  <!-- Error State -->
+  <div id="error" class="hidden max-w-2xl mx-auto mt-12 bg-red-50 border border-red-200 rounded-lg p-6">
+    <h2 class="text-xl font-bold text-red-800 mb-4">⚠️ Data Loading Failed</h2>
+    <p class="text-red-700 mb-4">Required data files are missing.</p>
+    <div id="error-details" class="bg-white rounded p-4 border border-red-200 font-mono text-sm text-red-600"></div>
+  </div>
+  
+  <!-- Main App -->
+  <div id="app" class="hidden">
+    
+    <!-- Header -->
+    <header class="bg-white border-b">
+      <div class="max-w-6xl mx-auto px-4 py-4">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 class="text-2xl font-bold text-gray-800">MV-FRAR Research Dashboard</h1>
+            <p class="text-sm text-gray-500">Version <span id="header-version">-</span></p>
           </div>
-          <span className="w-14 text-right text-sm font-mono">{pct}%</span>
-        </div>
-      );
-    };
-
-    const LoadingSpinner = () => (
-      <div className="flex items-center justify-center p-12">
-        <div className="loading-spinner rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        <span className="ml-3 text-gray-600">Loading data...</span>
-      </div>
-    );
-
-    const ErrorCard = ({ errors }) => (
-      <div className="max-w-2xl mx-auto mt-12 bg-red-50 border border-red-200 rounded-lg p-6">
-        <h2 className="text-xl font-bold text-red-800 mb-4">⚠️ Data Loading Failed</h2>
-        <p className="text-red-700 mb-4">Required data files are missing or invalid.</p>
-        <div className="bg-white rounded p-4 border border-red-200">
-          <p className="font-semibold text-gray-700 mb-2">Missing files:</p>
-          <ul className="list-disc list-inside text-red-600 font-mono text-sm">
-            {errors.map((e, i) => <li key={i}>{e}</li>)}
-          </ul>
+          <div class="flex items-center gap-4 bg-gray-50 rounded-lg px-4 py-2">
+            <div class="text-right">
+              <p class="text-xs text-gray-500">Status</p>
+              <span id="header-status" class="inline-block px-2 py-0.5 text-xs font-semibold rounded bg-green-100 text-green-700">-</span>
+            </div>
+            <div class="text-right">
+              <p class="text-xs text-gray-500">Signal</p>
+              <p id="header-date" class="text-sm font-mono">-</p>
+            </div>
+            <div class="text-right">
+              <p class="text-xs text-gray-500">Regime</p>
+              <span id="header-regime" class="inline-block px-2 py-0.5 text-xs font-semibold rounded-full regime-LOW">-</span>
+            </div>
+          </div>
         </div>
       </div>
-    );
-
-    // ============================================================================
-    // HEADER
-    // ============================================================================
-    const Header = ({ manifest, signal, metrics, onHealthClick }) => {
-      const validation = metrics?.validation || { status: 'UNKNOWN' };
-      return (
-        <header className="bg-white border-b">
-          <div className="max-w-6xl mx-auto px-4 py-4">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-800">MV-FRAR Research Dashboard</h1>
-                <p className="text-sm text-gray-500">Version {manifest?.version || '?'}</p>
-              </div>
-              <button onClick={onHealthClick} className="flex items-center gap-4 bg-gray-50 hover:bg-gray-100 rounded-lg px-4 py-2">
-                <div className="text-right">
-                  <p className="text-xs text-gray-500">Status</p>
-                  <StatusBadge status={validation.status} size="small" />
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-gray-500">Signal</p>
-                  <p className="text-sm font-mono">{manifest?.latest_signal_date || '?'}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-gray-500">Hash</p>
-                  <p className="text-xs font-mono text-gray-600">{manifest?.data_hash?.slice(0, 8) || '?'}</p>
-                </div>
-                <RegimeBadge regime={signal?.regime || 'LOW'} size="small" />
-              </button>
-            </div>
-          </div>
-        </header>
-      );
-    };
-
-    // ============================================================================
-    // TABS
-    // ============================================================================
-    const SignalTab = ({ signal }) => {
-      const [showModel, setShowModel] = useState(false);
-      const isDefensive = signal.regime === 'HIGH' || signal.regime === 'CRISIS';
-      const defensiveAssets = ['TLT', 'IEF', 'GLD'];
-      const sectorWeights = Object.entries(signal.executable_weights || {}).filter(([t]) => !defensiveAssets.includes(t)).sort((a,b) => b[1]-a[1]).filter(([,w]) => w > 0);
-      const defWeights = Object.entries(signal.executable_weights || {}).filter(([t]) => defensiveAssets.includes(t)).filter(([,w]) => w > 0);
-
-      return (
-        <div className="bg-white rounded-lg border p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Current Signal</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div><p className="text-sm text-gray-500">As-Of Date</p><p className="text-lg font-semibold">{signal.as_of_date}</p></div>
-            <div><p className="text-sm text-gray-500">Execution Date</p><p className="text-lg font-semibold">{signal.execution_date}</p></div>
-            <div><p className="text-sm text-gray-500">Regime</p><div className="mt-1"><RegimeBadge regime={signal.regime} /></div></div>
-            <div><p className="text-sm text-gray-500">Equity Scalar</p><p className="text-lg font-semibold">{(signal.scalar * 100).toFixed(0)}%</p></div>
-          </div>
-          
-          {isDefensive && (
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
-              <p className="font-semibold text-orange-800">⚠️ Equity sleeve disabled — Defensive basket active</p>
-            </div>
-          )}
-          
-          <div className="border-t pt-4">
-            <h3 className="font-semibold text-gray-700 mb-3">Model Output Allocation</h3>
-            {isDefensive && defWeights.length > 0 && (
-              <div className="mb-4 max-w-md bg-orange-50 p-3 rounded">
-                <p className="text-sm text-gray-500 mb-2">Defensive Basket</p>
-                {defWeights.map(([t,w]) => <WeightBar key={t} ticker={t} weight={w} isDefensive />)}
-              </div>
-            )}
-            <div className="max-w-md">
-              {sectorWeights.map(([t,w]) => <WeightBar key={t} ticker={t} weight={w} />)}
-            </div>
-          </div>
-          
-          <div className="border-t pt-4 mt-4 bg-blue-50 rounded p-3">
-            <p className="text-sm text-blue-800"><strong>System:</strong> FRAR provides risk regime. Sector weights are the MV-FRAR demonstration sleeve.</p>
-          </div>
-          
-          <div className="mt-4 bg-gray-50 border rounded p-3 text-sm text-gray-700">
-            <strong>Note:</strong> Equity exposure is 0% in HIGH/CRISIS regimes.
-          </div>
+    </header>
+    
+    <!-- Navigation -->
+    <nav class="bg-white border-b">
+      <div class="max-w-6xl mx-auto px-4">
+        <div class="flex gap-1 overflow-x-auto" id="tabs">
+          <button onclick="showTab('signal')" id="tab-signal" class="px-4 py-3 text-sm font-medium border-b-2 border-transparent hover:text-gray-700 tab-active">Signal</button>
+          <button onclick="showTab('drivers')" id="tab-drivers" class="px-4 py-3 text-sm font-medium border-b-2 border-transparent hover:text-gray-700">Risk Drivers</button>
+          <button onclick="showTab('regime')" id="tab-regime" class="px-4 py-3 text-sm font-medium border-b-2 border-transparent hover:text-gray-700">Regimes</button>
+          <button onclick="showTab('performance')" id="tab-performance" class="px-4 py-3 text-sm font-medium border-b-2 border-transparent hover:text-gray-700">Performance</button>
+          <button onclick="showTab('costs')" id="tab-costs" class="px-4 py-3 text-sm font-medium border-b-2 border-transparent hover:text-gray-700">Costs</button>
+          <button onclick="showTab('health')" id="tab-health" class="px-4 py-3 text-sm font-medium border-b-2 border-transparent hover:text-gray-700">Health</button>
         </div>
-      );
-    };
-
-    const RiskDriversTab = ({ driversData }) => {
-      const recent = driversData.slice(-60);
-      return (
-        <div className="bg-white rounded-lg border p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Risk Drivers</h2>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={recent}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={5} />
-                <YAxis tick={{ fontSize: 11 }} domain={[0, 1]} />
-                <Tooltip formatter={(v) => v?.toFixed(3)} />
-                <Legend />
-                <Area type="monotone" dataKey="risk_score" fill="#fee2e2" stroke="#ef4444" strokeWidth={2} name="Risk Score" />
-                <Line type="monotone" dataKey="threshold_median" stroke="#f97316" strokeDasharray="5 5" dot={false} name="Median" />
-                <Line type="monotone" dataKey="threshold_75" stroke="#dc2626" strokeDasharray="5 5" dot={false} name="75th" />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-4 bg-gray-50 rounded p-3 text-sm">
-            <strong>Formula:</strong> <code>risk_score = 0.5×vol + 0.3×hill + 0.2×(1-hurst)</code>
-          </div>
-        </div>
-      );
-    };
-
-    const RegimeTab = ({ driversData, metrics }) => {
-      const counts = metrics.regime_counts || {};
-      const total = Object.values(counts).reduce((a,b) => a+b, 0);
-      const recent = driversData.slice(-48);
-      return (
-        <div className="bg-white rounded-lg border p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Regime History</h2>
-          <div className="flex gap-1 flex-wrap mb-6">
-            {recent.map((d, i) => (
-              <div key={i} className="w-6 h-6 rounded text-xs font-bold flex items-center justify-center"
-                style={{ backgroundColor: REGIME_COLORS[d.risk_state]?.bg, color: REGIME_COLORS[d.risk_state]?.text }}
-                title={`${d.date}: ${d.risk_state}`}>
-                {d.risk_state?.[0]}
-              </div>
-            ))}
-          </div>
-          <div className="border-t pt-4">
-            {['LOW','MID','HIGH','CRISIS'].map(r => (
-              <div key={r} className="flex items-center gap-3 mb-2">
-                <RegimeBadge regime={r} />
-                <div className="flex-1 bg-gray-100 rounded h-4 overflow-hidden">
-                  <div className="h-full rounded" style={{ width: `${((counts[r]||0)/total)*100}%`, backgroundColor: REGIME_COLORS[r]?.border }} />
-                </div>
-                <span className="text-sm font-mono w-24 text-right">{counts[r]||0} ({(((counts[r]||0)/total)*100).toFixed(0)}%)</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    };
-
-    const PerformanceTab = ({ metrics, equityData }) => {
-      const strategies = ['SPY_BH', '60_40', 'FRAR', 'FRAR_Net'];
-      const recent = equityData.filter(d => d.FRAR != null).slice(-250);
-      return (
-        <div className="space-y-6">
-          <div className="bg-white rounded-lg border p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Performance</h2>
-            <table className="w-full text-sm">
-              <thead><tr className="bg-gray-50">
-                <th className="px-3 py-2 text-left">Strategy</th>
-                <th className="px-3 py-2 text-right">CAGR</th>
-                <th className="px-3 py-2 text-right">Sharpe</th>
-                <th className="px-3 py-2 text-right">MaxDD</th>
-              </tr></thead>
-              <tbody>
-                {strategies.map(n => {
-                  const m = metrics.strategies?.[n];
-                  if (!m) return null;
-                  return (
-                    <tr key={n} className={n.includes('FRAR') ? 'bg-green-50' : ''}>
-                      <td className="px-3 py-2">{n}</td>
-                      <td className="px-3 py-2 text-right font-mono">{(m.cagr*100).toFixed(2)}%</td>
-                      <td className="px-3 py-2 text-right font-mono">{m.sharpe?.toFixed(3)}</td>
-                      <td className="px-3 py-2 text-right font-mono">{(m.max_dd*100).toFixed(1)}%</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <div className="bg-white rounded-lg border p-6">
-            <h3 className="font-semibold text-gray-700 mb-4">Equity Curves</h3>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={recent}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={50} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="SPY_BH" stroke={CHART_COLORS.SPY_BH} dot={false} name="SPY" />
-                  <Line type="monotone" dataKey="FRAR" stroke={CHART_COLORS.FRAR} dot={false} strokeWidth={2} name="FRAR (gross)" />
-                  <Line type="monotone" dataKey="FRAR_Net" stroke={CHART_COLORS.FRAR_Net} dot={false} strokeDasharray="5 5" name="FRAR (net)" />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-      );
-    };
-
-    const TurnoverTab = ({ metrics, costSensitivity }) => {
-      const [cost, setCost] = useState(10);
-      const row = costSensitivity?.rows?.find(r => r.cost_bps === cost);
-      return (
-        <div className="space-y-6">
-          <div className="bg-white rounded-lg border p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Turnover & Costs</h2>
-            <table className="w-full text-sm">
-              <thead><tr className="bg-gray-50">
-                <th className="px-3 py-2 text-left">Strategy</th>
-                <th className="px-3 py-2 text-right">Turnover</th>
-                <th className="px-3 py-2 text-right">Cost</th>
-              </tr></thead>
-              <tbody>
-                {Object.entries(metrics.turnovers || {}).map(([n, t]) => (
-                  <tr key={n} className={n === 'FRAR' ? 'bg-green-50' : ''}>
-                    <td className="px-3 py-2">{n}</td>
-                    <td className="px-3 py-2 text-right font-mono">{t.annualized?.toFixed(2)}x</td>
-                    <td className="px-3 py-2 text-right font-mono">{t.cost_drag_bps?.toFixed(1)} bps</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="bg-white rounded-lg border p-6">
-            <h3 className="font-semibold text-gray-700 mb-4">Cost Sensitivity</h3>
-            <div className="flex gap-2 mb-4 flex-wrap">
-              {(costSensitivity?.cost_levels_bps || []).map(c => (
-                <button key={c} onClick={() => setCost(c)} className={`px-3 py-1 rounded text-sm font-mono ${cost === c ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>{c}bps</button>
-              ))}
-            </div>
-            {row && (
-              <div className="bg-blue-50 rounded p-4 grid grid-cols-4 gap-4 text-center">
-                <div><p className="text-xs text-gray-500">CAGR</p><p className="font-semibold">{(row.cagr*100).toFixed(2)}%</p></div>
-                <div><p className="text-xs text-gray-500">Sharpe</p><p className="font-semibold">{row.sharpe?.toFixed(3)}</p></div>
-                <div><p className="text-xs text-gray-500">MaxDD</p><p className="font-semibold">{(row.max_dd*100).toFixed(1)}%</p></div>
-                <div><p className="text-xs text-gray-500">Calmar</p><p className="font-semibold">{row.calmar?.toFixed(3)}</p></div>
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    };
-
-    const HealthTab = ({ metrics, manifest }) => {
-      const parity = metrics.parity_check || {};
-      const validation = metrics.validation || { status: 'UNKNOWN', warnings: [] };
-      return (
-        <div className="bg-white rounded-lg border p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Data Health</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className={`rounded-lg p-4 text-center ${validation.status === 'PASS' ? 'bg-green-50' : 'bg-red-50'}`}>
-              <p className="text-sm text-gray-600">Validation</p>
-              <p className={`text-2xl font-bold ${validation.status === 'PASS' ? 'text-green-700' : 'text-red-700'}`}>{validation.status}</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-4 text-center">
-              <p className="text-sm text-gray-600">Version</p>
-              <p className="text-lg font-mono">{manifest?.version}</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-4 text-center">
-              <p className="text-sm text-gray-600">Data Hash</p>
-              <p className="text-sm font-mono">{manifest?.data_hash?.slice(0,12)}</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-4 text-center">
-              <p className="text-sm text-gray-600">Signal Date</p>
-              <p className="text-sm font-mono">{manifest?.latest_signal_date}</p>
-            </div>
-          </div>
-          
-          <div className="border-t pt-4">
-            <h3 className="font-semibold text-gray-700 mb-3">Parity Check vs 60/40</h3>
-            <div className="flex items-center gap-4 mb-4">
-              <StatusBadge status={parity.parity_status || 'N/A'} />
-              <span className="text-sm">FRAR wins {parity.parity_wins || 0}/4</span>
-            </div>
-            {parity.parity_components && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {Object.entries(parity.parity_components).map(([m, d]) => (
-                  <div key={m} className={`rounded-lg p-3 ${d.frar_wins ? 'bg-green-50' : 'bg-red-50'}`}>
-                    <p className="text-xs text-gray-500 uppercase">{m}</p>
-                    <p className="font-mono text-sm">{d.frar_wins ? '✓' : '✗'}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          
-          <div className="border-t pt-4 mt-4">
-            <h3 className="font-semibold text-gray-700 mb-3">Downloads</h3>
-            <div className="flex gap-2 flex-wrap">
-              <a href={`${OUTPUTS_BASE_URL}/latest_signal.json`} download className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm">📄 Signal</a>
-              <a href={`${OUTPUTS_BASE_URL}/audit.csv`} download className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm">📊 Audit</a>
-              <a href={`${OUTPUTS_BASE_URL}/tearsheet.pdf`} download className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm">📑 PDF</a>
-            </div>
-          </div>
-        </div>
-      );
-    };
-
-    const DisclosurePanel = () => (
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-xs text-amber-800 mb-6">
-        <p className="font-semibold mb-1">⚠️ Research System Disclosures</p>
-        <ul className="list-disc list-inside">
+      </div>
+    </nav>
+    
+    <!-- Content -->
+    <main class="max-w-6xl mx-auto px-4 py-6">
+      
+      <!-- Disclosures -->
+      <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-xs text-amber-800 mb-6">
+        <p class="font-semibold mb-1">⚠️ Research System Disclosures</p>
+        <ul class="list-disc list-inside">
           <li>Research system, not trading advice</li>
           <li>Monthly rebalance, T+1 execution</li>
           <li>Past performance ≠ future results</li>
         </ul>
       </div>
-    );
-
-    // ============================================================================
-    // MAIN APP
-    // ============================================================================
-    function App() {
-      const [tab, setTab] = useState('signal');
-      const [loading, setLoading] = useState(true);
-      const [error, setError] = useState(null);
-      const [data, setData] = useState({});
-
-      useEffect(() => {
-        async function load() {
-          const errors = [];
-          const d = {};
-          
-          try { d.manifest = await loadJSON('manifest.json'); } catch { errors.push('manifest.json'); }
-          try { d.signal = await loadJSON('latest_signal.json'); } catch { errors.push('latest_signal.json'); }
-          try { d.metrics = await loadJSON('metrics.json'); } catch { errors.push('metrics.json'); }
-          try { d.equityData = await loadCSV('equity_curves.csv'); } catch { errors.push('equity_curves.csv'); }
-          try { d.driversData = await loadCSV('drivers_timeseries.csv'); } catch { errors.push('drivers_timeseries.csv'); }
-          try { d.costSensitivity = await loadJSON('cost_sensitivity.json'); } catch { errors.push('cost_sensitivity.json'); }
-          
-          if (errors.length > 0) setError(errors);
-          else setData(d);
-          setLoading(false);
-        }
-        load();
-      }, []);
-
-      const tabs = [
-        { id: 'signal', label: 'Signal' },
-        { id: 'drivers', label: 'Risk Drivers' },
-        { id: 'regime', label: 'Regimes' },
-        { id: 'performance', label: 'Performance' },
-        { id: 'turnover', label: 'Costs' },
-        { id: 'health', label: 'Health' }
-      ];
-
-      if (loading) return <LoadingSpinner />;
-      if (error) return <ErrorCard errors={error} />;
-
-      const { manifest, signal, metrics, equityData, driversData, costSensitivity } = data;
-
-      return (
-        <div className="min-h-screen bg-gray-50">
-          <Header manifest={manifest} signal={signal} metrics={metrics} onHealthClick={() => setTab('health')} />
-          
-          <nav className="bg-white border-b">
-            <div className="max-w-6xl mx-auto px-4">
-              <div className="flex gap-1 overflow-x-auto">
-                {tabs.map(t => (
-                  <button key={t.id} onClick={() => setTab(t.id)}
-                    className={`px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap ${tab === t.id ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500'}`}>
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </nav>
-          
-          <main className="max-w-6xl mx-auto px-4 py-6">
-            <DisclosurePanel />
-            {tab === 'signal' && <SignalTab signal={signal} />}
-            {tab === 'drivers' && <RiskDriversTab driversData={driversData} />}
-            {tab === 'regime' && <RegimeTab driversData={driversData} metrics={metrics} />}
-            {tab === 'performance' && <PerformanceTab metrics={metrics} equityData={equityData} />}
-            {tab === 'turnover' && <TurnoverTab metrics={metrics} costSensitivity={costSensitivity} />}
-            {tab === 'health' && <HealthTab metrics={metrics} manifest={manifest} />}
-          </main>
-          
-          <footer className="bg-white border-t mt-8">
-            <div className="max-w-6xl mx-auto px-4 py-4 text-center text-xs text-gray-500">
-              MV-FRAR Research Dashboard v1.1 • For research purposes only
-            </div>
-          </footer>
+      
+      <!-- Tab: Signal -->
+      <div id="content-signal" class="tab-content">
+        <div class="bg-white rounded-lg border p-6">
+          <h2 class="text-xl font-bold text-gray-800 mb-4">Current Signal</h2>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div><p class="text-sm text-gray-500">As-Of Date</p><p id="signal-asof" class="text-lg font-semibold">-</p></div>
+            <div><p class="text-sm text-gray-500">Execution Date</p><p id="signal-exec" class="text-lg font-semibold">-</p></div>
+            <div><p class="text-sm text-gray-500">Regime</p><div class="mt-1"><span id="signal-regime" class="inline-block px-3 py-1 text-sm font-semibold rounded-full regime-LOW">-</span></div></div>
+            <div><p class="text-sm text-gray-500">Equity Scalar</p><p id="signal-scalar" class="text-lg font-semibold">-</p></div>
+          </div>
+          <div class="border-t pt-4">
+            <h3 class="font-semibold text-gray-700 mb-3">Model Output Allocation</h3>
+            <div id="weights-container" class="max-w-md"></div>
+          </div>
+          <div class="border-t pt-4 mt-4 bg-blue-50 rounded p-3">
+            <p class="text-sm text-blue-800"><strong>System:</strong> FRAR provides risk regime. Sector weights are the MV-FRAR demonstration sleeve.</p>
+          </div>
+          <div class="mt-4 bg-gray-50 border rounded p-3 text-sm text-gray-700">
+            <strong>Note:</strong> Equity exposure is 0% in HIGH/CRISIS regimes.
+          </div>
         </div>
-      );
-    }
+      </div>
+      
+      <!-- Tab: Risk Drivers -->
+      <div id="content-drivers" class="tab-content hidden">
+        <div class="bg-white rounded-lg border p-6">
+          <h2 class="text-xl font-bold text-gray-800 mb-4">Risk Drivers</h2>
+          <p class="text-sm text-gray-600 mb-4">Risk score determines regime. Higher = more defensive.</p>
+          <div class="h-80">
+            <canvas id="chart-drivers"></canvas>
+          </div>
+          <div class="mt-4 bg-gray-50 rounded p-3 text-sm">
+            <strong>Formula:</strong> <code>risk_score = 0.5×vol + 0.3×hill + 0.2×(1-hurst)</code>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tab: Regimes -->
+      <div id="content-regime" class="tab-content hidden">
+        <div class="bg-white rounded-lg border p-6">
+          <h2 class="text-xl font-bold text-gray-800 mb-4">Regime History</h2>
+          <div id="regime-timeline" class="flex gap-1 flex-wrap mb-6"></div>
+          <div class="border-t pt-4">
+            <h3 class="font-semibold text-gray-700 mb-3">Distribution</h3>
+            <div id="regime-distribution"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tab: Performance -->
+      <div id="content-performance" class="tab-content hidden">
+        <div class="bg-white rounded-lg border p-6 mb-6">
+          <h2 class="text-xl font-bold text-gray-800 mb-4">Performance Summary</h2>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead><tr class="bg-gray-50">
+                <th class="px-3 py-2 text-left">Strategy</th>
+                <th class="px-3 py-2 text-right">CAGR</th>
+                <th class="px-3 py-2 text-right">Sharpe</th>
+                <th class="px-3 py-2 text-right">Max DD</th>
+                <th class="px-3 py-2 text-right">Calmar</th>
+              </tr></thead>
+              <tbody id="performance-table"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg border p-6">
+          <h3 class="font-semibold text-gray-700 mb-4">Equity Curves</h3>
+          <div class="h-80">
+            <canvas id="chart-equity"></canvas>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tab: Costs -->
+      <div id="content-costs" class="tab-content hidden">
+        <div class="bg-white rounded-lg border p-6 mb-6">
+          <h2 class="text-xl font-bold text-gray-800 mb-4">Turnover & Costs</h2>
+          <table class="w-full text-sm">
+            <thead><tr class="bg-gray-50">
+              <th class="px-3 py-2 text-left">Strategy</th>
+              <th class="px-3 py-2 text-right">Turnover</th>
+              <th class="px-3 py-2 text-right">Cost Drag</th>
+            </tr></thead>
+            <tbody id="turnover-table"></tbody>
+          </table>
+        </div>
+        <div class="bg-white rounded-lg border p-6">
+          <h3 class="font-semibold text-gray-700 mb-4">Cost Sensitivity</h3>
+          <div class="flex gap-2 mb-4 flex-wrap" id="cost-buttons"></div>
+          <div id="cost-details" class="bg-blue-50 rounded p-4 grid grid-cols-4 gap-4 text-center mb-4"></div>
+          <div class="h-64">
+            <canvas id="chart-costs"></canvas>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tab: Health -->
+      <div id="content-health" class="tab-content hidden">
+        <div class="bg-white rounded-lg border p-6">
+          <h2 class="text-xl font-bold text-gray-800 mb-4">Data Health</h2>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div id="health-status" class="rounded-lg p-4 text-center bg-green-50">
+              <p class="text-sm text-gray-600">Validation</p>
+              <p class="text-2xl font-bold text-green-700">-</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4 text-center">
+              <p class="text-sm text-gray-600">Version</p>
+              <p id="health-version" class="text-lg font-mono">-</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4 text-center">
+              <p class="text-sm text-gray-600">Data Hash</p>
+              <p id="health-hash" class="text-sm font-mono">-</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4 text-center">
+              <p class="text-sm text-gray-600">Signal Date</p>
+              <p id="health-date" class="text-sm font-mono">-</p>
+            </div>
+          </div>
+          <div class="border-t pt-4">
+            <h3 class="font-semibold text-gray-700 mb-3">Parity Check vs 60/40</h3>
+            <div class="flex items-center gap-4 mb-4">
+              <span id="parity-status" class="inline-block px-3 py-1 text-sm font-semibold rounded bg-green-100 text-green-700">-</span>
+              <span id="parity-wins" class="text-sm text-gray-600">-</span>
+            </div>
+            <div id="parity-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+          </div>
+          <div class="border-t pt-4 mt-4">
+            <h3 class="font-semibold text-gray-700 mb-3">Downloads</h3>
+            <div class="flex gap-2 flex-wrap">
+              <a href="./outputs/latest_signal.json" download class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm">📄 Signal</a>
+              <a href="./outputs/audit.csv" download class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm">📊 Audit</a>
+              <a href="./outputs/tearsheet.pdf" download class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm">📑 PDF</a>
+              <a href="./outputs/metrics.json" download class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm">📈 Metrics</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-white border-t mt-8">
+      <div class="max-w-6xl mx-auto px-4 py-4 text-center text-xs text-gray-500">
+        <p>MV-FRAR Research Dashboard v1.1 • For research purposes only</p>
+      </div>
+    </footer>
+    
+  </div>
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  <script>
+    // ============================================================================
+    // DATA
+    // ============================================================================
+    let DATA = {};
+    
+    async function loadJSON(file) {
+      const resp = await fetch(`./outputs/${file}`);
+      if (!resp.ok) throw new Error(file);
+      return resp.json();
+    }
+    
+    async function loadCSV(file) {
+      const resp = await fetch(`./outputs/${file}`);
+      if (!resp.ok) throw new Error(file);
+      const text = await resp.text();
+      const lines = text.trim().split('\n');
+      const headers = lines[0].split(',');
+      return lines.slice(1).map(line => {
+        const vals = line.split(',');
+        const row = {};
+        headers.forEach((h, i) => {
+          const v = vals[i];
+          row[h.trim()] = v === '' ? null : (isNaN(v) ? v : parseFloat(v));
+        });
+        return row;
+      });
+    }
+    
+    async function loadAllData() {
+      const errors = [];
+      try { DATA.manifest = await loadJSON('manifest.json'); } catch(e) { errors.push('manifest.json'); }
+      try { DATA.signal = await loadJSON('latest_signal.json'); } catch(e) { errors.push('latest_signal.json'); }
+      try { DATA.metrics = await loadJSON('metrics.json'); } catch(e) { errors.push('metrics.json'); }
+      try { DATA.drivers = await loadCSV('drivers_timeseries.csv'); } catch(e) { errors.push('drivers_timeseries.csv'); }
+      try { DATA.equity = await loadCSV('equity_curves.csv'); } catch(e) { errors.push('equity_curves.csv'); }
+      try { DATA.costs = await loadJSON('cost_sensitivity.json'); } catch(e) { errors.push('cost_sensitivity.json'); }
+      return errors;
+    }
+    
+    // ============================================================================
+    // TABS
+    // ============================================================================
+    function showTab(name) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('#tabs button').forEach(el => el.classList.remove('tab-active'));
+      document.getElementById(`content-${name}`).classList.remove('hidden');
+      document.getElementById(`tab-${name}`).classList.add('tab-active');
+    }
+    
+    // ============================================================================
+    // RENDER FUNCTIONS
+    // ============================================================================
+    function renderHeader() {
+      document.getElementById('header-version').textContent = DATA.manifest?.version || '?';
+      document.getElementById('header-date').textContent = DATA.manifest?.latest_signal_date || '?';
+      document.getElementById('header-status').textContent = DATA.metrics?.validation?.status || '?';
+      
+      const regime = DATA.signal?.regime || 'LOW';
+      const regimeEl = document.getElementById('header-regime');
+      regimeEl.textContent = regime;
+      regimeEl.className = `inline-block px-2 py-0.5 text-xs font-semibold rounded-full regime-${regime}`;
+    }
+    
+    function renderSignal() {
+      const s = DATA.signal;
+      document.getElementById('signal-asof').textContent = s?.as_of_date || '-';
+      document.getElementById('signal-exec').textContent = s?.execution_date || '-';
+      document.getElementById('signal-scalar').textContent = s?.scalar ? `${(s.scalar * 100).toFixed(0)}%` : '-';
+      
+      const regime = s?.regime || 'LOW';
+      const regimeEl = document.getElementById('signal-regime');
+      regimeEl.textContent = regime;
+      regimeEl.className = `inline-block px-3 py-1 text-sm font-semibold rounded-full regime-${regime}`;
+      
+      // Weights
+      const weights = s?.executable_weights || {};
+      const sorted = Object.entries(weights).sort((a,b) => b[1] - a[1]).filter(([,w]) => w > 0);
+      const container = document.getElementById('weights-container');
+      container.innerHTML = sorted.map(([ticker, weight]) => `
+        <div class="flex items-center gap-2 py-1">
+          <span class="w-12 text-sm font-mono text-gray-600">${ticker}</span>
+          <div class="flex-1 bg-gray-100 rounded h-5 overflow-hidden">
+            <div class="h-full bg-blue-500 rounded" style="width: ${(weight * 100)}%"></div>
+          </div>
+          <span class="w-14 text-right text-sm font-mono">${(weight * 100).toFixed(1)}%</span>
+        </div>
+      `).join('');
+    }
+    
+    function renderDrivers() {
+      const recent = (DATA.drivers || []).slice(-60);
+      const ctx = document.getElementById('chart-drivers').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: recent.map(d => d.date),
+          datasets: [
+            { label: 'Risk Score', data: recent.map(d => d.risk_score), borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', fill: true },
+            { label: 'Median Threshold', data: recent.map(d => d.threshold_median), borderColor: '#f97316', borderDash: [5,5], fill: false },
+            { label: '75th Threshold', data: recent.map(d => d.threshold_75), borderColor: '#dc2626', borderDash: [5,5], fill: false }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 1 } }, plugins: { legend: { position: 'bottom' } } }
+      });
+    }
+    
+    function renderRegimes() {
+      const recent = (DATA.drivers || []).slice(-48);
+      const colors = { LOW: '#dcfce7', MID: '#fef9c3', HIGH: '#fed7aa', CRISIS: '#fecaca' };
+      const textColors = { LOW: '#166534', MID: '#854d0e', HIGH: '#9a3412', CRISIS: '#991b1b' };
+      
+      document.getElementById('regime-timeline').innerHTML = recent.map(d => `
+        <div class="w-6 h-6 rounded text-xs font-bold flex items-center justify-center" 
+             style="background:${colors[d.risk_state]};color:${textColors[d.risk_state]}" 
+             title="${d.date}: ${d.risk_state}">
+          ${d.risk_state?.[0] || '?'}
+        </div>
+      `).join('');
+      
+      const counts = DATA.metrics?.regime_counts || {};
+      const total = Object.values(counts).reduce((a,b) => a+b, 0);
+      const borders = { LOW: '#22c55e', MID: '#eab308', HIGH: '#f97316', CRISIS: '#ef4444' };
+      
+      document.getElementById('regime-distribution').innerHTML = ['LOW','MID','HIGH','CRISIS'].map(r => `
+        <div class="flex items-center gap-3 mb-2">
+          <span class="inline-block px-3 py-1 text-sm font-semibold rounded-full regime-${r}">${r}</span>
+          <div class="flex-1 bg-gray-100 rounded h-4 overflow-hidden">
+            <div class="h-full rounded" style="width:${((counts[r]||0)/total)*100}%;background:${borders[r]}"></div>
+          </div>
+          <span class="text-sm font-mono w-24 text-right">${counts[r]||0} (${(((counts[r]||0)/total)*100).toFixed(0)}%)</span>
+        </div>
+      `).join('');
+    }
+    
+    function renderPerformance() {
+      const strategies = ['SPY_BH', '60_40', 'FRAR', 'FRAR_Net'];
+      const metrics = DATA.metrics?.strategies || {};
+      
+      document.getElementById('performance-table').innerHTML = strategies.map(n => {
+        const m = metrics[n];
+        if (!m) return '';
+        const isFRAR = n.includes('FRAR');
+        return `
+          <tr class="${isFRAR ? 'bg-green-50' : ''}">
+            <td class="px-3 py-2 font-medium">${n}</td>
+            <td class="px-3 py-2 text-right font-mono">${(m.cagr*100).toFixed(2)}%</td>
+            <td class="px-3 py-2 text-right font-mono">${m.sharpe?.toFixed(3)}</td>
+            <td class="px-3 py-2 text-right font-mono">${(m.max_dd*100).toFixed(1)}%</td>
+            <td class="px-3 py-2 text-right font-mono">${m.calmar?.toFixed(3)}</td>
+          </tr>
+        `;
+      }).join('');
+      
+      // Equity chart
+      const equity = (DATA.equity || []).filter(d => d.FRAR != null);
+      const sampled = equity.filter((_, i) => i % 20 === 0 || i === equity.length - 1);
+      
+      const ctx = document.getElementById('chart-equity').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: sampled.map(d => d.date),
+          datasets: [
+            { label: 'SPY', data: sampled.map(d => d.SPY_BH), borderColor: '#4A90D9', fill: false, pointRadius: 0 },
+            { label: '60/40', data: sampled.map(d => d['60_40']), borderColor: '#F5A623', fill: false, pointRadius: 0 },
+            { label: 'FRAR (gross)', data: sampled.map(d => d.FRAR), borderColor: '#2ECC71', borderWidth: 3, fill: false, pointRadius: 0 },
+            { label: 'FRAR (net)', data: sampled.map(d => d.FRAR_Net), borderColor: '#27ae60', borderDash: [5,5], fill: false, pointRadius: 0 }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+      });
+    }
+    
+    function renderCosts() {
+      const turnovers = DATA.metrics?.turnovers || {};
+      document.getElementById('turnover-table').innerHTML = Object.entries(turnovers).map(([n, t]) => `
+        <tr class="${n === 'FRAR' ? 'bg-green-50' : ''}">
+          <td class="px-3 py-2 font-medium">${n}</td>
+          <td class="px-3 py-2 text-right font-mono">${t.annualized?.toFixed(2)}x</td>
+          <td class="px-3 py-2 text-right font-mono">${t.cost_drag_bps?.toFixed(1)} bps</td>
+        </tr>
+      `).join('');
+      
+      const costs = DATA.costs || {};
+      const levels = costs.cost_levels_bps || [];
+      const rows = costs.rows || [];
+      
+      // Buttons
+      document.getElementById('cost-buttons').innerHTML = levels.map(c => 
+        `<button onclick="selectCost(${c})" id="cost-btn-${c}" class="px-3 py-1 rounded text-sm font-mono ${c === 10 ? 'bg-blue-600 text-white' : 'bg-gray-100'}">${c} bps</button>`
+      ).join('');
+      
+      selectCost(10);
+      
+      // Chart
+      const ctx = document.getElementById('chart-costs').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: rows.map(r => `${r.cost_bps}bps`),
+          datasets: [{ label: 'CAGR', data: rows.map(r => r.cagr * 100), backgroundColor: '#93c5fd' }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 8, max: 11 } } }
+      });
+    }
+    
+    function selectCost(cost) {
+      document.querySelectorAll('#cost-buttons button').forEach(b => {
+        b.className = b.id === `cost-btn-${cost}` ? 'px-3 py-1 rounded text-sm font-mono bg-blue-600 text-white' : 'px-3 py-1 rounded text-sm font-mono bg-gray-100';
+      });
+      
+      const row = (DATA.costs?.rows || []).find(r => r.cost_bps === cost);
+      if (row) {
+        document.getElementById('cost-details').innerHTML = `
+          <div><p class="text-xs text-gray-500">CAGR</p><p class="font-semibold">${(row.cagr*100).toFixed(2)}%</p></div>
+          <div><p class="text-xs text-gray-500">Sharpe</p><p class="font-semibold">${row.sharpe?.toFixed(3)}</p></div>
+          <div><p class="text-xs text-gray-500">Max DD</p><p class="font-semibold">${(row.max_dd*100).toFixed(1)}%</p></div>
+          <div><p class="text-xs text-gray-500">Calmar</p><p class="font-semibold">${row.calmar?.toFixed(3)}</p></div>
+        `;
+      }
+    }
+    
+    function renderHealth() {
+      const m = DATA.manifest || {};
+      const v = DATA.metrics?.validation || {};
+      const p = DATA.metrics?.parity_check || {};
+      
+      const statusEl = document.getElementById('health-status');
+      statusEl.innerHTML = `<p class="text-sm text-gray-600">Validation</p><p class="text-2xl font-bold ${v.status === 'PASS' ? 'text-green-700' : 'text-red-700'}">${v.status || '?'}</p>`;
+      statusEl.className = `rounded-lg p-4 text-center ${v.status === 'PASS' ? 'bg-green-50' : 'bg-red-50'}`;
+      
+      document.getElementById('health-version').textContent = m.version || '?';
+      document.getElementById('health-hash').textContent = m.data_hash?.slice(0,12) || '?';
+      document.getElementById('health-date').textContent = m.latest_signal_date || '?';
+      
+      document.getElementById('parity-status').textContent = p.parity_status || '?';
+      document.getElementById('parity-status').className = `inline-block px-3 py-1 text-sm font-semibold rounded ${p.parity_status === 'PASS' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`;
+      document.getElementById('parity-wins').textContent = `FRAR wins ${p.parity_wins || 0}/4`;
+      
+      const comps = p.parity_components || {};
+      document.getElementById('parity-grid').innerHTML = Object.entries(comps).map(([k, v]) => `
+        <div class="rounded-lg p-3 ${v.frar_wins ? 'bg-green-50' : 'bg-red-50'}">
+          <p class="text-xs text-gray-500 uppercase">${k}</p>
+          <p class="text-sm">${v.frar_wins ? '✓ FRAR' : '✗ 60/40'}</p>
+        </div>
+      `).join('');
+    }
+    
+    // ============================================================================
+    // INIT
+    // ============================================================================
+    async function init() {
+      const errors = await loadAllData();
+      
+      document.getElementById('loading').classList.add('hidden');
+      
+      if (errors.length > 0) {
+        document.getElementById('error').classList.remove('hidden');
+        document.getElementById('error-details').innerHTML = errors.map(e => `• ${e}`).join('<br>');
+        return;
+      }
+      
+      document.getElementById('app').classList.remove('hidden');
+      
+      renderHeader();
+      renderSignal();
+      renderDrivers();
+      renderRegimes();
+      renderPerformance();
+      renderCosts();
+      renderHealth();
+    }
+    
+    init();
   </script>
 </body>
 </html>
