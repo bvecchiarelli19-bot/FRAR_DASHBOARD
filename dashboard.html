@@ -6,6 +6,7 @@
   <title>MV-FRAR Research Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
     .loading { animation: pulse 2s infinite; }
@@ -15,6 +16,11 @@
     .regime-MID { background: #fef9c3; color: #854d0e; border: 2px solid #eab308; }
     .regime-HIGH { background: #fed7aa; color: #9a3412; border: 2px solid #f97316; }
     .regime-CRISIS { background: #fecaca; color: #991b1b; border: 2px solid #ef4444; }
+    .time-btn { transition: all 0.15s; }
+    .time-btn:hover { background: #e5e7eb; }
+    .time-btn.active { background: #3b82f6; color: white; }
+    .line-toggle { cursor: pointer; user-select: none; }
+    .line-toggle.disabled { opacity: 0.4; text-decoration: line-through; }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -30,42 +36,79 @@
   <!-- Error State -->
   <div id="error" class="hidden max-w-2xl mx-auto mt-12 bg-red-50 border border-red-200 rounded-lg p-6">
     <h2 class="text-xl font-bold text-red-800 mb-4">⚠️ Data Loading Failed</h2>
-    <p class="text-red-700 mb-4">Required data files are missing.</p>
+    <p class="text-red-700 mb-4">Required data files are missing or failed to load.</p>
     <div id="error-details" class="bg-white rounded p-4 border border-red-200 font-mono text-sm text-red-600"></div>
+    <p class="mt-4 text-sm text-gray-600">Check the browser console (F12) for more details.</p>
   </div>
   
   <!-- Main App -->
   <div id="app" class="hidden">
     
     <!-- Header -->
-    <header class="bg-white border-b">
-      <div class="max-w-6xl mx-auto px-4 py-4">
+    <header class="bg-white border-b shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 py-3">
         <div class="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 class="text-2xl font-bold text-gray-800">MV-FRAR Research Dashboard</h1>
             <p class="text-sm text-gray-500">Version <span id="header-version">-</span></p>
           </div>
-          <div class="flex items-center gap-4 bg-gray-50 rounded-lg px-4 py-2">
-            <div class="text-right">
-              <p class="text-xs text-gray-500">Status</p>
-              <span id="header-status" class="inline-block px-2 py-0.5 text-xs font-semibold rounded bg-green-100 text-green-700">-</span>
+          
+          <!-- Data Freshness Banner -->
+          <div class="flex items-center gap-6">
+            <div class="text-right text-xs">
+              <p class="text-gray-400">Data Updated</p>
+              <p id="header-generated" class="font-mono text-gray-600">-</p>
             </div>
-            <div class="text-right">
-              <p class="text-xs text-gray-500">Signal</p>
-              <p id="header-date" class="text-sm font-mono">-</p>
+            <div class="text-right text-xs">
+              <p class="text-gray-400">Signal (month-end)</p>
+              <p id="header-signal-date" class="font-mono font-semibold">-</p>
             </div>
-            <div class="text-right">
-              <p class="text-xs text-gray-500">Regime</p>
-              <span id="header-regime" class="inline-block px-2 py-0.5 text-xs font-semibold rounded-full regime-LOW">-</span>
+            <div class="text-right text-xs">
+              <p class="text-gray-400">Data Hash</p>
+              <p id="header-hash" class="font-mono text-gray-600">-</p>
             </div>
+            <div>
+              <span id="header-regime" class="inline-block px-3 py-1 text-sm font-semibold rounded-full regime-LOW">-</span>
+            </div>
+            
+            <!-- Downloads Dropdown -->
+            <div class="relative">
+              <button onclick="toggleDownloads()" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm font-medium flex items-center gap-1">
+                📥 Downloads <span class="text-xs">▼</span>
+              </button>
+              <div id="downloads-menu" class="hidden absolute right-0 mt-1 w-48 bg-white border rounded-lg shadow-lg z-50">
+                <a href="./outputs/latest_signal.json" download class="block px-4 py-2 hover:bg-gray-50 text-sm">📄 latest_signal.json</a>
+                <a href="./outputs/metrics.json" download class="block px-4 py-2 hover:bg-gray-50 text-sm">📈 metrics.json</a>
+                <a href="./outputs/audit.csv" download class="block px-4 py-2 hover:bg-gray-50 text-sm">📊 audit.csv</a>
+                <a href="./outputs/tearsheet.pdf" download class="block px-4 py-2 hover:bg-gray-50 text-sm">📑 tearsheet.pdf</a>
+              </div>
+            </div>
+            
+            <!-- Disclosures Toggle -->
+            <button onclick="toggleDisclosures()" class="px-3 py-2 text-amber-700 bg-amber-50 hover:bg-amber-100 rounded text-sm font-medium">
+              ⚠️ Disclosures
+            </button>
           </div>
+        </div>
+        
+        <!-- Expandable Disclosures Panel -->
+        <div id="disclosures-panel" class="hidden mt-4 bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+          <p class="font-semibold mb-2">⚠️ Research System Disclosures</p>
+          <ul class="list-disc list-inside space-y-1">
+            <li>This is a <strong>research system</strong>, not trading advice or a recommendation</li>
+            <li>Signals update monthly at month-end; execution assumes T+1 business day</li>
+            <li>Past performance does not guarantee future results</li>
+            <li>Transaction costs are estimates (default 10 bps); actual costs vary by broker</li>
+            <li>Data source: Yahoo Finance adjusted close prices</li>
+            <li>The sector sleeve is a demonstration implementation of FRAR risk overlay</li>
+          </ul>
         </div>
       </div>
     </header>
     
     <!-- Navigation -->
-    <nav class="bg-white border-b">
-      <div class="max-w-6xl mx-auto px-4">
+    <nav class="bg-white border-b sticky top-0 z-40">
+      <div class="max-w-7xl mx-auto px-4">
         <div class="flex gap-1 overflow-x-auto" id="tabs">
           <button onclick="showTab('signal')" id="tab-signal" class="px-4 py-3 text-sm font-medium border-b-2 border-transparent hover:text-gray-700 tab-active">Signal</button>
           <button onclick="showTab('drivers')" id="tab-drivers" class="px-4 py-3 text-sm font-medium border-b-2 border-transparent hover:text-gray-700">Risk Drivers</button>
@@ -78,51 +121,140 @@
     </nav>
     
     <!-- Content -->
-    <main class="max-w-6xl mx-auto px-4 py-6">
-      
-      <!-- Disclosures -->
-      <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-xs text-amber-800 mb-6">
-        <p class="font-semibold mb-1">⚠️ Research System Disclosures</p>
-        <ul class="list-disc list-inside">
-          <li>Research system, not trading advice</li>
-          <li>Monthly rebalance, T+1 execution</li>
-          <li>Past performance ≠ future results</li>
-        </ul>
-      </div>
+    <main class="max-w-7xl mx-auto px-4 py-6">
       
       <!-- Tab: Signal -->
       <div id="content-signal" class="tab-content">
         <div class="bg-white rounded-lg border p-6">
           <h2 class="text-xl font-bold text-gray-800 mb-4">Current Signal</h2>
+          
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div><p class="text-sm text-gray-500">As-Of Date</p><p id="signal-asof" class="text-lg font-semibold">-</p></div>
-            <div><p class="text-sm text-gray-500">Execution Date</p><p id="signal-exec" class="text-lg font-semibold">-</p></div>
-            <div><p class="text-sm text-gray-500">Regime</p><div class="mt-1"><span id="signal-regime" class="inline-block px-3 py-1 text-sm font-semibold rounded-full regime-LOW">-</span></div></div>
-            <div><p class="text-sm text-gray-500">Equity Scalar</p><p id="signal-scalar" class="text-lg font-semibold">-</p></div>
+            <div>
+              <p class="text-sm text-gray-500">Signal as-of (month-end)</p>
+              <p id="signal-asof" class="text-lg font-semibold font-mono">-</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500">Next rebalance (T+1)</p>
+              <p id="signal-exec" class="text-lg font-semibold font-mono">-</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500">Current Regime</p>
+              <div class="mt-1"><span id="signal-regime" class="inline-block px-3 py-1 text-sm font-semibold rounded-full regime-LOW">-</span></div>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500">Equity Scalar</p>
+              <p id="signal-scalar" class="text-lg font-semibold">-</p>
+            </div>
           </div>
+          
+          <!-- Defensive regime alert -->
+          <div id="defensive-alert" class="hidden bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+            <p class="font-semibold text-orange-800">⚠️ Defensive Mode Active</p>
+            <p class="text-sm text-orange-700">Equity sleeve disabled. Portfolio in defensive assets (TLT, IEF, GLD).</p>
+          </div>
+          
           <div class="border-t pt-4">
-            <h3 class="font-semibold text-gray-700 mb-3">Model Output Allocation</h3>
-            <div id="weights-container" class="max-w-md"></div>
+            <h3 class="font-semibold text-gray-700 mb-1">Reference Allocation (post-buffer)</h3>
+            <p class="text-xs text-gray-500 mb-3">These weights reflect the model output after applying the 5% rebalance buffer.</p>
+            <div id="weights-container" class="max-w-lg"></div>
           </div>
-          <div class="border-t pt-4 mt-4 bg-blue-50 rounded p-3">
-            <p class="text-sm text-blue-800"><strong>System:</strong> FRAR provides risk regime. Sector weights are the MV-FRAR demonstration sleeve.</p>
-          </div>
-          <div class="mt-4 bg-gray-50 border rounded p-3 text-sm text-gray-700">
-            <strong>Note:</strong> Equity exposure is 0% in HIGH/CRISIS regimes.
+          
+          <div class="grid md:grid-cols-2 gap-4 mt-6">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p class="font-semibold text-blue-800 mb-2">System Architecture</p>
+              <p class="text-sm text-blue-700">FRAR provides the risk regime and capital gating. The sector weights shown are the MV-FRAR demonstration sleeve—one possible implementation of the FRAR overlay.</p>
+            </div>
+            <div class="bg-gray-50 border rounded-lg p-4">
+              <p class="font-semibold text-gray-700 mb-2">Rebalance Notes</p>
+              <p class="text-sm text-gray-600">Equity exposure goes to 0% in HIGH/CRISIS regimes. The portfolio shifts entirely to defensive assets when risk is elevated.</p>
+            </div>
           </div>
         </div>
       </div>
       
       <!-- Tab: Risk Drivers -->
       <div id="content-drivers" class="tab-content hidden">
+        <div class="grid md:grid-cols-3 gap-6 mb-6">
+          <!-- Current Values Card -->
+          <div class="bg-white rounded-lg border p-4">
+            <h3 class="font-semibold text-gray-700 mb-3">Current Risk Inputs</h3>
+            <div class="space-y-3">
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-600">Vol Percentile</span>
+                <span id="current-vol" class="font-mono font-semibold">-</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-600">Hill Alpha</span>
+                <span id="current-hill" class="font-mono font-semibold">-</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-600">Hurst Exponent</span>
+                <span id="current-hurst" class="font-mono font-semibold">-</span>
+              </div>
+              <div class="border-t pt-2 flex justify-between items-center">
+                <span class="text-sm font-semibold text-gray-700">Risk Score</span>
+                <span id="current-risk" class="font-mono font-bold text-lg">-</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Thresholds Card -->
+          <div class="bg-white rounded-lg border p-4">
+            <h3 class="font-semibold text-gray-700 mb-3">Regime Thresholds</h3>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-gray-600">Median (→MID)</span>
+                <span id="thresh-median" class="font-mono">-</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">75th Pctl (→HIGH)</span>
+                <span id="thresh-75" class="font-mono">-</span>
+              </div>
+              <div class="mt-3 p-2 bg-gray-50 rounded">
+                <p class="text-xs text-gray-500">Current score position:</p>
+                <div id="score-position" class="mt-2 h-4 bg-gray-200 rounded relative">
+                  <div id="score-marker" class="absolute w-3 h-6 -top-1 bg-red-500 rounded" style="left: 50%"></div>
+                </div>
+                <div class="flex justify-between text-xs text-gray-400 mt-1">
+                  <span>0 (LOW)</span>
+                  <span>1 (CRISIS)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- How Regime is Assigned -->
+          <div class="bg-white rounded-lg border p-4">
+            <h3 class="font-semibold text-gray-700 mb-3">How Regime is Assigned</h3>
+            <ol class="text-sm space-y-2 list-decimal list-inside text-gray-600">
+              <li><strong>LOW:</strong> Risk score &lt; median threshold</li>
+              <li><strong>MID:</strong> Risk score ≥ median but &lt; 75th</li>
+              <li><strong>HIGH:</strong> Risk score ≥ 75th percentile</li>
+              <li><strong>CRISIS:</strong> HIGH regime + tail risk worsening (Hill alpha declining)</li>
+            </ol>
+            <p class="mt-3 text-xs text-gray-500">Note: Early backtest periods (first 12 months) use conservative defaults while thresholds calibrate.</p>
+          </div>
+        </div>
+        
         <div class="bg-white rounded-lg border p-6">
-          <h2 class="text-xl font-bold text-gray-800 mb-4">Risk Drivers</h2>
-          <p class="text-sm text-gray-600 mb-4">Risk score determines regime. Higher = more defensive.</p>
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold text-gray-800">Risk Score History</h2>
+            <div class="flex gap-1" id="drivers-time-controls"></div>
+          </div>
+          
+          <!-- Quick Jump Buttons -->
+          <div class="flex gap-2 mb-4">
+            <span class="text-sm text-gray-500">Jump to:</span>
+            <button onclick="jumpToDriversPeriod('2008-01','2009-12')" class="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded">2008-09 Crisis</button>
+            <button onclick="jumpToDriversPeriod('2020-01','2020-12')" class="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded">2020 COVID</button>
+            <button onclick="jumpToDriversPeriod('2022-01','2022-12')" class="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded">2022 Drawdown</button>
+          </div>
+          
           <div class="h-80">
             <canvas id="chart-drivers"></canvas>
           </div>
           <div class="mt-4 bg-gray-50 rounded p-3 text-sm">
-            <strong>Formula:</strong> <code>risk_score = 0.5×vol + 0.3×hill + 0.2×(1-hurst)</code>
+            <strong>Formula:</strong> <code class="bg-gray-200 px-1 rounded">risk_score = 0.5 × vol_percentile + 0.3 × hill_risk + 0.2 × (1 - hurst)</code>
           </div>
         </div>
       </div>
@@ -130,11 +262,31 @@
       <!-- Tab: Regimes -->
       <div id="content-regime" class="tab-content hidden">
         <div class="bg-white rounded-lg border p-6">
-          <h2 class="text-xl font-bold text-gray-800 mb-4">Regime History</h2>
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="text-xl font-bold text-gray-800">Regime History</h2>
+              <p class="text-sm text-gray-500">Regime updates monthly at month-end. Each box = 1 month.</p>
+            </div>
+            <div class="text-sm text-gray-500">
+              Showing last <span id="regime-month-count">48</span> months
+            </div>
+          </div>
+          
           <div id="regime-timeline" class="flex gap-1 flex-wrap mb-6"></div>
+          
           <div class="border-t pt-4">
-            <h3 class="font-semibold text-gray-700 mb-3">Distribution</h3>
+            <h3 class="font-semibold text-gray-700 mb-3">Full History Distribution</h3>
             <div id="regime-distribution"></div>
+          </div>
+          
+          <div class="border-t pt-4 mt-4 bg-gray-50 rounded p-4">
+            <h4 class="font-semibold text-gray-700 mb-2">Regime Behavior</h4>
+            <div class="grid md:grid-cols-4 gap-4 text-sm">
+              <div><span class="inline-block px-2 py-0.5 rounded-full regime-LOW text-xs font-semibold">LOW</span><p class="mt-1 text-gray-600">Full equity exposure (100%)</p></div>
+              <div><span class="inline-block px-2 py-0.5 rounded-full regime-MID text-xs font-semibold">MID</span><p class="mt-1 text-gray-600">Reduced equity (80%)</p></div>
+              <div><span class="inline-block px-2 py-0.5 rounded-full regime-HIGH text-xs font-semibold">HIGH</span><p class="mt-1 text-gray-600">Minimal equity (50%)</p></div>
+              <div><span class="inline-block px-2 py-0.5 rounded-full regime-CRISIS text-xs font-semibold">CRISIS</span><p class="mt-1 text-gray-600">Defensive only (20%)</p></div>
+            </div>
           </div>
         </div>
       </div>
@@ -148,6 +300,7 @@
               <thead><tr class="bg-gray-50">
                 <th class="px-3 py-2 text-left">Strategy</th>
                 <th class="px-3 py-2 text-right">CAGR</th>
+                <th class="px-3 py-2 text-right">Volatility</th>
                 <th class="px-3 py-2 text-right">Sharpe</th>
                 <th class="px-3 py-2 text-right">Max DD</th>
                 <th class="px-3 py-2 text-right">Calmar</th>
@@ -156,11 +309,36 @@
             </table>
           </div>
         </div>
+        
         <div class="bg-white rounded-lg border p-6">
-          <h3 class="font-semibold text-gray-700 mb-4">Equity Curves</h3>
-          <div class="h-80">
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-4">
+            <h3 class="font-semibold text-gray-700">Equity Curves</h3>
+            <div class="flex items-center gap-4">
+              <!-- Time Range Controls -->
+              <div class="flex gap-1" id="equity-time-controls"></div>
+              <!-- Log Scale Toggle -->
+              <label class="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="checkbox" id="log-scale-toggle" onchange="toggleLogScale()" class="rounded">
+                <span>Log Scale</span>
+              </label>
+            </div>
+          </div>
+          
+          <!-- Quick Jump Buttons -->
+          <div class="flex gap-2 mb-4">
+            <span class="text-sm text-gray-500">Jump to:</span>
+            <button onclick="jumpToEquityPeriod('2008-01','2009-12')" class="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded">2008-09</button>
+            <button onclick="jumpToEquityPeriod('2020-01','2020-12')" class="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded">2020</button>
+            <button onclick="jumpToEquityPeriod('2022-01','2022-12')" class="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded">2022</button>
+          </div>
+          
+          <!-- Line Visibility Toggles -->
+          <div class="flex gap-4 mb-4 flex-wrap" id="line-toggles"></div>
+          
+          <div class="h-96">
             <canvas id="chart-equity"></canvas>
           </div>
+          <p class="text-xs text-gray-500 mt-2">Hover over chart for exact values. Click legend items to show/hide lines.</p>
         </div>
       </div>
       
@@ -171,14 +349,17 @@
           <table class="w-full text-sm">
             <thead><tr class="bg-gray-50">
               <th class="px-3 py-2 text-left">Strategy</th>
-              <th class="px-3 py-2 text-right">Turnover</th>
-              <th class="px-3 py-2 text-right">Cost Drag</th>
+              <th class="px-3 py-2 text-right">Annualized Turnover</th>
+              <th class="px-3 py-2 text-right">Cost Drag (@ 10 bps)</th>
             </tr></thead>
             <tbody id="turnover-table"></tbody>
           </table>
+          <p class="text-xs text-gray-500 mt-3">Turnover definition: Two-way sum of absolute weight changes. Cost = turnover × cost_bps.</p>
         </div>
+        
         <div class="bg-white rounded-lg border p-6">
-          <h3 class="font-semibold text-gray-700 mb-4">Cost Sensitivity</h3>
+          <h3 class="font-semibold text-gray-700 mb-4">Cost Sensitivity Analysis</h3>
+          <p class="text-sm text-gray-600 mb-4">See how FRAR performance changes at different transaction cost assumptions.</p>
           <div class="flex gap-2 mb-4 flex-wrap" id="cost-buttons"></div>
           <div id="cost-details" class="bg-blue-50 rounded p-4 grid grid-cols-4 gap-4 text-center mb-4"></div>
           <div class="h-64">
@@ -189,43 +370,67 @@
       
       <!-- Tab: Health -->
       <div id="content-health" class="tab-content hidden">
-        <div class="bg-white rounded-lg border p-6">
-          <h2 class="text-xl font-bold text-gray-800 mb-4">Data Health</h2>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div id="health-status" class="rounded-lg p-4 text-center bg-green-50">
-              <p class="text-sm text-gray-600">Validation</p>
-              <p class="text-2xl font-bold text-green-700">-</p>
+        <div class="grid md:grid-cols-2 gap-6">
+          <!-- Validation Status -->
+          <div class="bg-white rounded-lg border p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Data Health</h2>
+            <div class="grid grid-cols-2 gap-4 mb-6">
+              <div id="health-status" class="rounded-lg p-4 text-center bg-green-50">
+                <p class="text-sm text-gray-600">Validation</p>
+                <p class="text-2xl font-bold text-green-700">-</p>
+              </div>
+              <div class="bg-gray-50 rounded-lg p-4 text-center">
+                <p class="text-sm text-gray-600">Signal Date</p>
+                <p id="health-date" class="text-lg font-mono">-</p>
+              </div>
             </div>
-            <div class="bg-gray-50 rounded-lg p-4 text-center">
-              <p class="text-sm text-gray-600">Version</p>
-              <p id="health-version" class="text-lg font-mono">-</p>
-            </div>
-            <div class="bg-gray-50 rounded-lg p-4 text-center">
-              <p class="text-sm text-gray-600">Data Hash</p>
-              <p id="health-hash" class="text-sm font-mono">-</p>
-            </div>
-            <div class="bg-gray-50 rounded-lg p-4 text-center">
-              <p class="text-sm text-gray-600">Signal Date</p>
-              <p id="health-date" class="text-sm font-mono">-</p>
-            </div>
-          </div>
-          <div class="border-t pt-4">
-            <h3 class="font-semibold text-gray-700 mb-3">Parity Check vs 60/40</h3>
-            <div class="flex items-center gap-4 mb-4">
-              <span id="parity-status" class="inline-block px-3 py-1 text-sm font-semibold rounded bg-green-100 text-green-700">-</span>
-              <span id="parity-wins" class="text-sm text-gray-600">-</span>
-            </div>
-            <div id="parity-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
-          </div>
-          <div class="border-t pt-4 mt-4">
-            <h3 class="font-semibold text-gray-700 mb-3">Downloads</h3>
-            <div class="flex gap-2 flex-wrap">
-              <a href="./outputs/latest_signal.json" download class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm">📄 Signal</a>
-              <a href="./outputs/audit.csv" download class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm">📊 Audit</a>
-              <a href="./outputs/tearsheet.pdf" download class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm">📑 PDF</a>
-              <a href="./outputs/metrics.json" download class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm">📈 Metrics</a>
+            
+            <div class="border-t pt-4">
+              <h3 class="font-semibold text-gray-700 mb-3">Parity Check vs 60/40</h3>
+              <div class="flex items-center gap-4 mb-4">
+                <span id="parity-status" class="inline-block px-3 py-1 text-sm font-semibold rounded bg-green-100 text-green-700">-</span>
+                <span id="parity-wins" class="text-sm text-gray-600">-</span>
+              </div>
+              <div id="parity-grid" class="grid grid-cols-2 gap-3"></div>
             </div>
           </div>
+          
+          <!-- Run Metadata -->
+          <div class="bg-white rounded-lg border p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Run Metadata</h2>
+            <div class="space-y-3">
+              <div class="flex justify-between py-2 border-b">
+                <span class="text-gray-600">Version</span>
+                <span id="meta-version" class="font-mono font-semibold">-</span>
+              </div>
+              <div class="flex justify-between py-2 border-b">
+                <span class="text-gray-600">Parameter Hash</span>
+                <span id="meta-param-hash" class="font-mono text-sm">-</span>
+              </div>
+              <div class="flex justify-between py-2 border-b">
+                <span class="text-gray-600">Data Hash</span>
+                <span id="meta-data-hash" class="font-mono text-sm">-</span>
+              </div>
+              <div class="flex justify-between py-2 border-b">
+                <span class="text-gray-600">Generated At</span>
+                <span id="meta-generated" class="font-mono text-sm">-</span>
+              </div>
+              <div class="flex justify-between py-2 border-b">
+                <span class="text-gray-600">Turnover Definition</span>
+                <span class="text-sm text-right max-w-xs">Two-way: Σ|Δw|</span>
+              </div>
+              <div class="flex justify-between py-2">
+                <span class="text-gray-600">Cost Assumption</span>
+                <span id="meta-cost" class="font-mono">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Required Files Status -->
+        <div class="bg-white rounded-lg border p-6 mt-6">
+          <h3 class="font-semibold text-gray-700 mb-4">Required Files Status</h3>
+          <div id="files-status" class="grid grid-cols-2 md:grid-cols-3 gap-3"></div>
         </div>
       </div>
       
@@ -233,8 +438,8 @@
     
     <!-- Footer -->
     <footer class="bg-white border-t mt-8">
-      <div class="max-w-6xl mx-auto px-4 py-4 text-center text-xs text-gray-500">
-        <p>MV-FRAR Research Dashboard v1.1 • For research purposes only</p>
+      <div class="max-w-7xl mx-auto px-4 py-4 text-center text-xs text-gray-500">
+        <p>MV-FRAR Research Dashboard v1.2 • For research purposes only • Not investment advice</p>
       </div>
     </footer>
     
@@ -242,46 +447,96 @@
 
   <script>
     // ============================================================================
-    // DATA
+    // CONFIG & STATE
     // ============================================================================
+    const REQUIRED_FILES = ['manifest.json', 'latest_signal.json', 'metrics.json', 'drivers_timeseries.csv', 'equity_curves.csv', 'cost_sensitivity.json'];
     let DATA = {};
+    let CHARTS = {};
+    let FILE_STATUS = {};
+    let VISIBLE_LINES = { SPY_BH: true, '60_40': true, FRAR: true, FRAR_Net: true };
     
-    async function loadJSON(file) {
-      const resp = await fetch(`./outputs/${file}`);
-      if (!resp.ok) throw new Error(file);
-      return resp.json();
-    }
-    
-    async function loadCSV(file) {
-      const resp = await fetch(`./outputs/${file}`);
-      if (!resp.ok) throw new Error(file);
-      const text = await resp.text();
+    // ============================================================================
+    // CSV PARSER (handles quoted fields)
+    // ============================================================================
+    function parseCSV(text) {
       const lines = text.trim().split('\n');
-      const headers = lines[0].split(',');
+      const headers = parseCSVLine(lines[0]);
       return lines.slice(1).map(line => {
-        const vals = line.split(',');
+        const values = parseCSVLine(line);
         const row = {};
         headers.forEach((h, i) => {
-          const v = vals[i];
+          const v = values[i] || '';
           row[h.trim()] = v === '' ? null : (isNaN(v) ? v : parseFloat(v));
         });
         return row;
       });
     }
     
+    function parseCSVLine(line) {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          result.push(current);
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      result.push(current);
+      return result;
+    }
+    
+    // ============================================================================
+    // DATA LOADING (with cache busting)
+    // ============================================================================
+    async function loadJSON(file) {
+      const cacheBuster = Date.now();
+      const resp = await fetch(`./outputs/${file}?v=${cacheBuster}`);
+      if (!resp.ok) throw new Error(`${file}: HTTP ${resp.status}`);
+      FILE_STATUS[file] = { ok: true };
+      return resp.json();
+    }
+    
+    async function loadCSV(file) {
+      const cacheBuster = Date.now();
+      const resp = await fetch(`./outputs/${file}?v=${cacheBuster}`);
+      if (!resp.ok) throw new Error(`${file}: HTTP ${resp.status}`);
+      FILE_STATUS[file] = { ok: true };
+      const text = await resp.text();
+      return parseCSV(text);
+    }
+    
     async function loadAllData() {
       const errors = [];
-      try { DATA.manifest = await loadJSON('manifest.json'); } catch(e) { errors.push('manifest.json'); }
-      try { DATA.signal = await loadJSON('latest_signal.json'); } catch(e) { errors.push('latest_signal.json'); }
-      try { DATA.metrics = await loadJSON('metrics.json'); } catch(e) { errors.push('metrics.json'); }
-      try { DATA.drivers = await loadCSV('drivers_timeseries.csv'); } catch(e) { errors.push('drivers_timeseries.csv'); }
-      try { DATA.equity = await loadCSV('equity_curves.csv'); } catch(e) { errors.push('equity_curves.csv'); }
-      try { DATA.costs = await loadJSON('cost_sensitivity.json'); } catch(e) { errors.push('cost_sensitivity.json'); }
+      
+      try { DATA.manifest = await loadJSON('manifest.json'); } 
+      catch(e) { errors.push(e.message); FILE_STATUS['manifest.json'] = { ok: false, error: e.message }; }
+      
+      try { DATA.signal = await loadJSON('latest_signal.json'); } 
+      catch(e) { errors.push(e.message); FILE_STATUS['latest_signal.json'] = { ok: false, error: e.message }; }
+      
+      try { DATA.metrics = await loadJSON('metrics.json'); } 
+      catch(e) { errors.push(e.message); FILE_STATUS['metrics.json'] = { ok: false, error: e.message }; }
+      
+      try { DATA.drivers = await loadCSV('drivers_timeseries.csv'); } 
+      catch(e) { errors.push(e.message); FILE_STATUS['drivers_timeseries.csv'] = { ok: false, error: e.message }; }
+      
+      try { DATA.equity = await loadCSV('equity_curves.csv'); } 
+      catch(e) { errors.push(e.message); FILE_STATUS['equity_curves.csv'] = { ok: false, error: e.message }; }
+      
+      try { DATA.costs = await loadJSON('cost_sensitivity.json'); } 
+      catch(e) { errors.push(e.message); FILE_STATUS['cost_sensitivity.json'] = { ok: false, error: e.message }; }
+      
       return errors;
     }
     
     // ============================================================================
-    // TABS
+    // UI HELPERS
     // ============================================================================
     function showTab(name) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -290,72 +545,199 @@
       document.getElementById(`tab-${name}`).classList.add('tab-active');
     }
     
+    function toggleDownloads() {
+      document.getElementById('downloads-menu').classList.toggle('hidden');
+    }
+    
+    function toggleDisclosures() {
+      document.getElementById('disclosures-panel').classList.toggle('hidden');
+    }
+    
+    function formatDate(dateStr) {
+      if (!dateStr) return '-';
+      return dateStr.split('T')[0]; // YYYY-MM-DD
+    }
+    
+    function formatPct(val, decimals = 1) {
+      if (val == null) return '-';
+      return (val * 100).toFixed(decimals) + '%';
+    }
+    
+    // ============================================================================
+    // TIME RANGE CONTROLS
+    // ============================================================================
+    function createTimeControls(containerId, callback) {
+      const ranges = [
+        { label: '1Y', months: 12 },
+        { label: '3Y', months: 36 },
+        { label: '5Y', months: 60 },
+        { label: '10Y', months: 120 },
+        { label: 'Max', months: 9999 }
+      ];
+      
+      const container = document.getElementById(containerId);
+      container.innerHTML = ranges.map((r, i) => 
+        `<button onclick="${callback}(${r.months})" class="time-btn px-2 py-1 text-xs rounded ${i === 4 ? 'active' : ''}" data-months="${r.months}">${r.label}</button>`
+      ).join('');
+    }
+    
+    function setActiveTimeButton(containerId, months) {
+      document.querySelectorAll(`#${containerId} .time-btn`).forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.months) === months);
+      });
+    }
+    
     // ============================================================================
     // RENDER FUNCTIONS
     // ============================================================================
     function renderHeader() {
-      document.getElementById('header-version').textContent = DATA.manifest?.version || '?';
-      document.getElementById('header-date').textContent = DATA.manifest?.latest_signal_date || '?';
-      document.getElementById('header-status').textContent = DATA.metrics?.validation?.status || '?';
+      const m = DATA.manifest || {};
+      const s = DATA.signal || {};
+      const v = DATA.metrics?.validation || {};
       
-      const regime = DATA.signal?.regime || 'LOW';
+      document.getElementById('header-version').textContent = m.version || '?';
+      document.getElementById('header-generated').textContent = formatDate(m.generated_at);
+      document.getElementById('header-signal-date').textContent = formatDate(m.latest_signal_date);
+      document.getElementById('header-hash').textContent = (m.data_hash || '?').slice(0, 8);
+      
+      const regime = s.regime || 'LOW';
       const regimeEl = document.getElementById('header-regime');
       regimeEl.textContent = regime;
-      regimeEl.className = `inline-block px-2 py-0.5 text-xs font-semibold rounded-full regime-${regime}`;
+      regimeEl.className = `inline-block px-3 py-1 text-sm font-semibold rounded-full regime-${regime}`;
     }
     
     function renderSignal() {
-      const s = DATA.signal;
-      document.getElementById('signal-asof').textContent = s?.as_of_date || '-';
-      document.getElementById('signal-exec').textContent = s?.execution_date || '-';
-      document.getElementById('signal-scalar').textContent = s?.scalar ? `${(s.scalar * 100).toFixed(0)}%` : '-';
+      const s = DATA.signal || {};
       
-      const regime = s?.regime || 'LOW';
+      document.getElementById('signal-asof').textContent = formatDate(s.as_of_date);
+      document.getElementById('signal-exec').textContent = formatDate(s.execution_date);
+      document.getElementById('signal-scalar').textContent = s.scalar != null ? `${(s.scalar * 100).toFixed(0)}%` : '-';
+      
+      const regime = s.regime || 'LOW';
       const regimeEl = document.getElementById('signal-regime');
       regimeEl.textContent = regime;
       regimeEl.className = `inline-block px-3 py-1 text-sm font-semibold rounded-full regime-${regime}`;
       
-      // Weights
-      const weights = s?.executable_weights || {};
+      // Show defensive alert if HIGH/CRISIS
+      const isDefensive = regime === 'HIGH' || regime === 'CRISIS';
+      document.getElementById('defensive-alert').classList.toggle('hidden', !isDefensive);
+      
+      // Render weights
+      const weights = s.executable_weights || {};
       const sorted = Object.entries(weights).sort((a,b) => b[1] - a[1]).filter(([,w]) => w > 0);
+      const defensiveAssets = ['TLT', 'IEF', 'GLD'];
+      
       const container = document.getElementById('weights-container');
-      container.innerHTML = sorted.map(([ticker, weight]) => `
-        <div class="flex items-center gap-2 py-1">
-          <span class="w-12 text-sm font-mono text-gray-600">${ticker}</span>
-          <div class="flex-1 bg-gray-100 rounded h-5 overflow-hidden">
-            <div class="h-full bg-blue-500 rounded" style="width: ${(weight * 100)}%"></div>
+      container.innerHTML = sorted.map(([ticker, weight]) => {
+        const isDefensiveAsset = defensiveAssets.includes(ticker);
+        const barColor = isDefensiveAsset ? '#f59e0b' : '#3b82f6';
+        return `
+          <div class="flex items-center gap-2 py-1">
+            <span class="w-12 text-sm font-mono text-gray-600">${ticker}</span>
+            <div class="flex-1 bg-gray-100 rounded h-5 overflow-hidden">
+              <div class="h-full rounded" style="width: ${(weight * 100)}%; background: ${barColor}"></div>
+            </div>
+            <span class="w-14 text-right text-sm font-mono">${(weight * 100).toFixed(1)}%</span>
           </div>
-          <span class="w-14 text-right text-sm font-mono">${(weight * 100).toFixed(1)}%</span>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
     
-    function renderDrivers() {
-      const recent = (DATA.drivers || []).slice(-60);
+    function renderDrivers(monthsToShow = 9999) {
+      const allDrivers = DATA.drivers || [];
+      const drivers = monthsToShow >= allDrivers.length ? allDrivers : allDrivers.slice(-monthsToShow);
+      
+      // Current values
+      const latest = allDrivers[allDrivers.length - 1] || {};
+      document.getElementById('current-vol').textContent = latest.vol_percentile?.toFixed(3) || '-';
+      document.getElementById('current-hill').textContent = latest.hill_alpha?.toFixed(2) || '-';
+      document.getElementById('current-hurst').textContent = latest.hurst?.toFixed(3) || '-';
+      document.getElementById('current-risk').textContent = latest.risk_score?.toFixed(3) || '-';
+      document.getElementById('thresh-median').textContent = latest.threshold_median?.toFixed(3) || '-';
+      document.getElementById('thresh-75').textContent = latest.threshold_75?.toFixed(3) || '-';
+      
+      // Score position marker
+      const scorePos = (latest.risk_score || 0.5) * 100;
+      document.getElementById('score-marker').style.left = `calc(${scorePos}% - 6px)`;
+      
+      // Time controls
+      createTimeControls('drivers-time-controls', 'updateDriversRange');
+      setActiveTimeButton('drivers-time-controls', monthsToShow);
+      
+      // Destroy existing chart
+      if (CHARTS.drivers) CHARTS.drivers.destroy();
+      
       const ctx = document.getElementById('chart-drivers').getContext('2d');
-      new Chart(ctx, {
+      CHARTS.drivers = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: recent.map(d => d.date),
+          labels: drivers.map(d => d.date),
           datasets: [
-            { label: 'Risk Score', data: recent.map(d => d.risk_score), borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', fill: true },
-            { label: 'Median Threshold', data: recent.map(d => d.threshold_median), borderColor: '#f97316', borderDash: [5,5], fill: false },
-            { label: '75th Threshold', data: recent.map(d => d.threshold_75), borderColor: '#dc2626', borderDash: [5,5], fill: false }
+            { label: 'Risk Score', data: drivers.map(d => d.risk_score), borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', fill: true, pointRadius: 2 },
+            { label: 'Median Threshold', data: drivers.map(d => d.threshold_median), borderColor: '#f97316', borderDash: [5,5], fill: false, pointRadius: 0 },
+            { label: '75th Threshold', data: drivers.map(d => d.threshold_75), borderColor: '#dc2626', borderDash: [5,5], fill: false, pointRadius: 0 }
           ]
         },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 1 } }, plugins: { legend: { position: 'bottom' } } }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { intersect: false, mode: 'index' },
+          scales: { y: { min: 0, max: 1, ticks: { callback: v => (v * 100).toFixed(0) + '%' } } },
+          plugins: {
+            legend: { position: 'bottom' },
+            tooltip: {
+              callbacks: {
+                label: ctx => `${ctx.dataset.label}: ${ctx.raw?.toFixed(3)}`
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    function updateDriversRange(months) {
+      setActiveTimeButton('drivers-time-controls', months);
+      renderDrivers(months);
+    }
+    
+    function jumpToDriversPeriod(start, end) {
+      const drivers = DATA.drivers || [];
+      const startIdx = drivers.findIndex(d => d.date >= start);
+      const endIdx = drivers.findIndex(d => d.date > end);
+      const filtered = drivers.slice(startIdx, endIdx > 0 ? endIdx : undefined);
+      
+      if (CHARTS.drivers) CHARTS.drivers.destroy();
+      const ctx = document.getElementById('chart-drivers').getContext('2d');
+      CHARTS.drivers = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: filtered.map(d => d.date),
+          datasets: [
+            { label: 'Risk Score', data: filtered.map(d => d.risk_score), borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', fill: true, pointRadius: 3 },
+            { label: 'Median', data: filtered.map(d => d.threshold_median), borderColor: '#f97316', borderDash: [5,5], fill: false, pointRadius: 0 },
+            { label: '75th', data: filtered.map(d => d.threshold_75), borderColor: '#dc2626', borderDash: [5,5], fill: false, pointRadius: 0 }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: { y: { min: 0, max: 1 } },
+          plugins: { legend: { position: 'bottom' } }
+        }
       });
     }
     
     function renderRegimes() {
-      const recent = (DATA.drivers || []).slice(-48);
+      const drivers = DATA.drivers || [];
+      const recent = drivers.slice(-48);
+      document.getElementById('regime-month-count').textContent = recent.length;
+      
       const colors = { LOW: '#dcfce7', MID: '#fef9c3', HIGH: '#fed7aa', CRISIS: '#fecaca' };
       const textColors = { LOW: '#166534', MID: '#854d0e', HIGH: '#9a3412', CRISIS: '#991b1b' };
       
       document.getElementById('regime-timeline').innerHTML = recent.map(d => `
-        <div class="w-6 h-6 rounded text-xs font-bold flex items-center justify-center" 
+        <div class="w-7 h-7 rounded text-xs font-bold flex items-center justify-center cursor-help" 
              style="background:${colors[d.risk_state]};color:${textColors[d.risk_state]}" 
-             title="${d.date}: ${d.risk_state}">
+             title="${d.date} (month-end): ${d.risk_state}\nRisk Score: ${d.risk_score?.toFixed(3)}">
           ${d.risk_state?.[0] || '?'}
         </div>
       `).join('');
@@ -366,16 +748,16 @@
       
       document.getElementById('regime-distribution').innerHTML = ['LOW','MID','HIGH','CRISIS'].map(r => `
         <div class="flex items-center gap-3 mb-2">
-          <span class="inline-block px-3 py-1 text-sm font-semibold rounded-full regime-${r}">${r}</span>
+          <span class="inline-block w-16 px-2 py-1 text-xs font-semibold rounded-full regime-${r} text-center">${r}</span>
           <div class="flex-1 bg-gray-100 rounded h-4 overflow-hidden">
             <div class="h-full rounded" style="width:${((counts[r]||0)/total)*100}%;background:${borders[r]}"></div>
           </div>
-          <span class="text-sm font-mono w-24 text-right">${counts[r]||0} (${(((counts[r]||0)/total)*100).toFixed(0)}%)</span>
+          <span class="text-sm font-mono w-24 text-right">${counts[r]||0} mo (${(((counts[r]||0)/total)*100).toFixed(0)}%)</span>
         </div>
       `).join('');
     }
     
-    function renderPerformance() {
+    function renderPerformance(monthsToShow = 9999) {
       const strategies = ['SPY_BH', '60_40', 'FRAR', 'FRAR_Net'];
       const metrics = DATA.metrics?.strategies || {};
       
@@ -386,31 +768,131 @@
         return `
           <tr class="${isFRAR ? 'bg-green-50' : ''}">
             <td class="px-3 py-2 font-medium">${n}</td>
-            <td class="px-3 py-2 text-right font-mono">${(m.cagr*100).toFixed(2)}%</td>
-            <td class="px-3 py-2 text-right font-mono">${m.sharpe?.toFixed(3)}</td>
-            <td class="px-3 py-2 text-right font-mono">${(m.max_dd*100).toFixed(1)}%</td>
-            <td class="px-3 py-2 text-right font-mono">${m.calmar?.toFixed(3)}</td>
+            <td class="px-3 py-2 text-right font-mono">${formatPct(m.cagr, 2)}</td>
+            <td class="px-3 py-2 text-right font-mono">${formatPct(m.vol, 1)}</td>
+            <td class="px-3 py-2 text-right font-mono">${m.sharpe?.toFixed(3) || '-'}</td>
+            <td class="px-3 py-2 text-right font-mono">${formatPct(m.max_dd, 1)}</td>
+            <td class="px-3 py-2 text-right font-mono">${m.calmar?.toFixed(3) || '-'}</td>
           </tr>
         `;
       }).join('');
       
-      // Equity chart
-      const equity = (DATA.equity || []).filter(d => d.FRAR != null);
-      const sampled = equity.filter((_, i) => i % 20 === 0 || i === equity.length - 1);
+      // Time controls
+      createTimeControls('equity-time-controls', 'updateEquityRange');
+      setActiveTimeButton('equity-time-controls', monthsToShow);
+      
+      // Line toggles
+      renderLineToggles();
+      
+      // Render chart
+      renderEquityChart(monthsToShow);
+    }
+    
+    function renderLineToggles() {
+      const colors = { SPY_BH: '#4A90D9', '60_40': '#F5A623', FRAR: '#2ECC71', FRAR_Net: '#27ae60' };
+      const labels = { SPY_BH: 'SPY', '60_40': '60/40', FRAR: 'FRAR (gross)', FRAR_Net: 'FRAR (net)' };
+      
+      document.getElementById('line-toggles').innerHTML = Object.keys(VISIBLE_LINES).map(key => `
+        <label class="line-toggle flex items-center gap-2 text-sm ${VISIBLE_LINES[key] ? '' : 'disabled'}" onclick="toggleLine('${key}')">
+          <span class="w-4 h-4 rounded" style="background: ${colors[key]}"></span>
+          <span>${labels[key]}</span>
+        </label>
+      `).join('');
+    }
+    
+    function toggleLine(key) {
+      VISIBLE_LINES[key] = !VISIBLE_LINES[key];
+      renderLineToggles();
+      renderEquityChart();
+    }
+    
+    function renderEquityChart(monthsToShow = 9999) {
+      const allEquity = (DATA.equity || []).filter(d => d.FRAR != null);
+      const equity = monthsToShow >= allEquity.length ? allEquity : allEquity.slice(-monthsToShow * 21); // ~21 trading days per month
+      
+      // Sample for performance (every 5th point)
+      const sampled = equity.filter((_, i) => i % 5 === 0 || i === equity.length - 1);
+      
+      const colors = { SPY_BH: '#4A90D9', '60_40': '#F5A623', FRAR: '#2ECC71', FRAR_Net: '#27ae60' };
+      const labels = { SPY_BH: 'SPY Buy & Hold', '60_40': '60/40 Portfolio', FRAR: 'FRAR (gross)', FRAR_Net: 'FRAR (net)' };
+      
+      const datasets = Object.keys(VISIBLE_LINES).filter(k => VISIBLE_LINES[k]).map(key => ({
+        label: labels[key],
+        data: sampled.map(d => d[key]),
+        borderColor: colors[key],
+        borderWidth: key.includes('FRAR') ? 2.5 : 1.5,
+        borderDash: key === 'FRAR_Net' ? [5,5] : [],
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
+      }));
+      
+      if (CHARTS.equity) CHARTS.equity.destroy();
+      
+      const isLogScale = document.getElementById('log-scale-toggle')?.checked || false;
       
       const ctx = document.getElementById('chart-equity').getContext('2d');
-      new Chart(ctx, {
+      CHARTS.equity = new Chart(ctx, {
         type: 'line',
-        data: {
-          labels: sampled.map(d => d.date),
-          datasets: [
-            { label: 'SPY', data: sampled.map(d => d.SPY_BH), borderColor: '#4A90D9', fill: false, pointRadius: 0 },
-            { label: '60/40', data: sampled.map(d => d['60_40']), borderColor: '#F5A623', fill: false, pointRadius: 0 },
-            { label: 'FRAR (gross)', data: sampled.map(d => d.FRAR), borderColor: '#2ECC71', borderWidth: 3, fill: false, pointRadius: 0 },
-            { label: 'FRAR (net)', data: sampled.map(d => d.FRAR_Net), borderColor: '#27ae60', borderDash: [5,5], fill: false, pointRadius: 0 }
-          ]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        data: { labels: sampled.map(d => d.date), datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { intersect: false, mode: 'index' },
+          scales: {
+            y: {
+              type: isLogScale ? 'logarithmic' : 'linear',
+              ticks: { callback: v => v.toFixed(1) }
+            }
+          },
+          plugins: {
+            legend: { position: 'bottom' },
+            tooltip: {
+              callbacks: {
+                title: ctx => `Date: ${ctx[0].label}`,
+                label: ctx => `${ctx.dataset.label}: ${ctx.raw?.toFixed(3)}`
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    function updateEquityRange(months) {
+      setActiveTimeButton('equity-time-controls', months);
+      renderEquityChart(months);
+    }
+    
+    function toggleLogScale() {
+      renderEquityChart();
+    }
+    
+    function jumpToEquityPeriod(start, end) {
+      const equity = (DATA.equity || []).filter(d => d.FRAR != null);
+      const filtered = equity.filter(d => d.date >= start && d.date <= end + '-31');
+      const sampled = filtered.filter((_, i) => i % 3 === 0);
+      
+      const colors = { SPY_BH: '#4A90D9', '60_40': '#F5A623', FRAR: '#2ECC71', FRAR_Net: '#27ae60' };
+      const labels = { SPY_BH: 'SPY', '60_40': '60/40', FRAR: 'FRAR (gross)', FRAR_Net: 'FRAR (net)' };
+      
+      const datasets = Object.keys(VISIBLE_LINES).filter(k => VISIBLE_LINES[k]).map(key => ({
+        label: labels[key],
+        data: sampled.map(d => d[key]),
+        borderColor: colors[key],
+        borderWidth: 2,
+        fill: false,
+        pointRadius: 0
+      }));
+      
+      if (CHARTS.equity) CHARTS.equity.destroy();
+      const ctx = document.getElementById('chart-equity').getContext('2d');
+      CHARTS.equity = new Chart(ctx, {
+        type: 'line',
+        data: { labels: sampled.map(d => d.date), datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } }
+        }
       });
     }
     
@@ -428,37 +910,43 @@
       const levels = costs.cost_levels_bps || [];
       const rows = costs.rows || [];
       
-      // Buttons
       document.getElementById('cost-buttons').innerHTML = levels.map(c => 
-        `<button onclick="selectCost(${c})" id="cost-btn-${c}" class="px-3 py-1 rounded text-sm font-mono ${c === 10 ? 'bg-blue-600 text-white' : 'bg-gray-100'}">${c} bps</button>`
+        `<button onclick="selectCost(${c})" id="cost-btn-${c}" class="px-3 py-1 rounded text-sm font-mono ${c === 10 ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}">${c} bps</button>`
       ).join('');
       
       selectCost(10);
       
-      // Chart
+      if (CHARTS.costs) CHARTS.costs.destroy();
       const ctx = document.getElementById('chart-costs').getContext('2d');
-      new Chart(ctx, {
+      CHARTS.costs = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: rows.map(r => `${r.cost_bps}bps`),
+          labels: rows.map(r => `${r.cost_bps} bps`),
           datasets: [{ label: 'CAGR', data: rows.map(r => r.cagr * 100), backgroundColor: '#93c5fd' }]
         },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 8, max: 11 } } }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { ticks: { callback: v => v.toFixed(1) + '%' } } },
+          plugins: { legend: { display: false } }
+        }
       });
     }
     
     function selectCost(cost) {
       document.querySelectorAll('#cost-buttons button').forEach(b => {
-        b.className = b.id === `cost-btn-${cost}` ? 'px-3 py-1 rounded text-sm font-mono bg-blue-600 text-white' : 'px-3 py-1 rounded text-sm font-mono bg-gray-100';
+        b.className = b.id === `cost-btn-${cost}` 
+          ? 'px-3 py-1 rounded text-sm font-mono bg-blue-600 text-white' 
+          : 'px-3 py-1 rounded text-sm font-mono bg-gray-100 hover:bg-gray-200';
       });
       
       const row = (DATA.costs?.rows || []).find(r => r.cost_bps === cost);
       if (row) {
         document.getElementById('cost-details').innerHTML = `
-          <div><p class="text-xs text-gray-500">CAGR</p><p class="font-semibold">${(row.cagr*100).toFixed(2)}%</p></div>
-          <div><p class="text-xs text-gray-500">Sharpe</p><p class="font-semibold">${row.sharpe?.toFixed(3)}</p></div>
-          <div><p class="text-xs text-gray-500">Max DD</p><p class="font-semibold">${(row.max_dd*100).toFixed(1)}%</p></div>
-          <div><p class="text-xs text-gray-500">Calmar</p><p class="font-semibold">${row.calmar?.toFixed(3)}</p></div>
+          <div><p class="text-xs text-gray-500">CAGR</p><p class="text-lg font-semibold">${formatPct(row.cagr, 2)}</p></div>
+          <div><p class="text-xs text-gray-500">Sharpe</p><p class="text-lg font-semibold">${row.sharpe?.toFixed(3)}</p></div>
+          <div><p class="text-xs text-gray-500">Max DD</p><p class="text-lg font-semibold">${formatPct(row.max_dd, 1)}</p></div>
+          <div><p class="text-xs text-gray-500">Calmar</p><p class="text-lg font-semibold">${row.calmar?.toFixed(3)}</p></div>
         `;
       }
     }
@@ -472,21 +960,38 @@
       statusEl.innerHTML = `<p class="text-sm text-gray-600">Validation</p><p class="text-2xl font-bold ${v.status === 'PASS' ? 'text-green-700' : 'text-red-700'}">${v.status || '?'}</p>`;
       statusEl.className = `rounded-lg p-4 text-center ${v.status === 'PASS' ? 'bg-green-50' : 'bg-red-50'}`;
       
-      document.getElementById('health-version').textContent = m.version || '?';
-      document.getElementById('health-hash').textContent = m.data_hash?.slice(0,12) || '?';
-      document.getElementById('health-date').textContent = m.latest_signal_date || '?';
+      document.getElementById('health-date').textContent = formatDate(m.latest_signal_date);
       
       document.getElementById('parity-status').textContent = p.parity_status || '?';
       document.getElementById('parity-status').className = `inline-block px-3 py-1 text-sm font-semibold rounded ${p.parity_status === 'PASS' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`;
-      document.getElementById('parity-wins').textContent = `FRAR wins ${p.parity_wins || 0}/4`;
+      document.getElementById('parity-wins').textContent = `FRAR wins ${p.parity_wins || 0}/4 metrics`;
       
       const comps = p.parity_components || {};
       document.getElementById('parity-grid').innerHTML = Object.entries(comps).map(([k, v]) => `
         <div class="rounded-lg p-3 ${v.frar_wins ? 'bg-green-50' : 'bg-red-50'}">
-          <p class="text-xs text-gray-500 uppercase">${k}</p>
-          <p class="text-sm">${v.frar_wins ? '✓ FRAR' : '✗ 60/40'}</p>
+          <p class="text-xs text-gray-500 uppercase">${k.replace('_', ' ')}</p>
+          <p class="text-sm font-semibold">${v.frar_wins ? '✓ FRAR' : '✗ 60/40'}</p>
         </div>
       `).join('');
+      
+      // Run metadata
+      document.getElementById('meta-version').textContent = m.version || '-';
+      document.getElementById('meta-param-hash').textContent = m.param_hash || '-';
+      document.getElementById('meta-data-hash').textContent = m.data_hash || '-';
+      document.getElementById('meta-generated').textContent = formatDate(m.generated_at);
+      document.getElementById('meta-cost').textContent = m.cost_bps_assumption ? `${m.cost_bps_assumption} bps` : '-';
+      
+      // Files status
+      document.getElementById('files-status').innerHTML = REQUIRED_FILES.map(f => {
+        const status = FILE_STATUS[f];
+        const isOk = status?.ok;
+        return `
+          <div class="flex items-center gap-2 p-2 rounded ${isOk ? 'bg-green-50' : 'bg-red-50'}">
+            <span class="${isOk ? 'text-green-600' : 'text-red-600'}">${isOk ? '✓' : '✗'}</span>
+            <span class="text-sm font-mono">${f}</span>
+          </div>
+        `;
+      }).join('');
     }
     
     // ============================================================================
@@ -497,13 +1002,21 @@
       
       document.getElementById('loading').classList.add('hidden');
       
-      if (errors.length > 0) {
+      if (errors.length > 0 && Object.keys(DATA).length < 3) {
+        // Show error only if critical files missing
         document.getElementById('error').classList.remove('hidden');
         document.getElementById('error-details').innerHTML = errors.map(e => `• ${e}`).join('<br>');
         return;
       }
       
       document.getElementById('app').classList.remove('hidden');
+      
+      // Close dropdowns on outside click
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.relative')) {
+          document.getElementById('downloads-menu').classList.add('hidden');
+        }
+      });
       
       renderHeader();
       renderSignal();
