@@ -4,31 +4,31 @@
   "regime": "MID",
   "scalar": 0.8,
   "model_target_weights": {
-    "XLK": 0.2907502593085167,
-    "XLF": 0.23389750640759424,
-    "XLE": 0.06306147868144638,
+    "XLK": 0.29075042050553807,
+    "XLF": 0.23389734410667629,
+    "XLE": 0.06306148815667807,
     "XLV": 0.0,
     "XLP": 0.0,
-    "XLU": 0.2762973686945116,
-    "XLI": 0.13599338690793103,
+    "XLU": 0.2762974331405239,
+    "XLI": 0.13599331409058352,
     "TLT": 0.0,
     "IEF": 0.0,
     "GLD": 0.0
   },
   "executable_weights": {
-    "XLK": 0.2911138982898929,
-    "XLF": 0.23419004011393996,
-    "XLE": 0.0618896573034888,
+    "XLK": 0.2911140631695745,
+    "XLF": 0.23418988041040412,
+    "XLE": 0.0618896555729363,
     "XLV": 0.0,
     "XLP": 0.0,
-    "XLU": 0.2766429315633048,
-    "XLI": 0.1361634727293735,
+    "XLU": 0.276642999397931,
+    "XLI": 0.136163401449154,
     "TLT": 0.0,
     "IEF": 0.0,
     "GLD": 0.0
   },
   "expected_gross_exposure": 1.0,
-  "turnover_two_way_vs_prior": 0.4734815573432606,
+  "turnover_two_way_vs_prior": 0.4734813170390925,
   "cost_bps_assumption": 10,
   "turnover_definition": "Two-way turnover: sum(abs(weight_new - weight_old)) across all assets. Cost applied as bps per unit turnover.",
   "risk_components": {
@@ -38,10 +38,10 @@
     "risk_score": 0.6268
   },
   "thresholds": {
-    "median": 0.526,
+    "median": 0.5259,
     "75th": 0.6872
   },
-  "data_hash": "57d9cb4682b16333",
+  "data_hash": "8917725e609a87c1",
   "param_hash": "e40a34410cee0e70",
   "version": "1.2.0",
   "calendar_notes": "Signal as-of: 2025-11-30 (month-end). Execution: T+1 business day (2025-12-01). If execution date is holiday, defer to next business day."
