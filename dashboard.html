@@ -8,8 +8,6 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-    .loading { animation: pulse 2s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     .tab-active { border-bottom: 2px solid #3b82f6; color: #3b82f6; }
     .regime-LOW { background: #dcfce7; color: #166534; border: 2px solid #22c55e; }
     .regime-MID { background: #fef9c3; color: #854d0e; border: 2px solid #eab308; }
@@ -18,36 +16,24 @@
     .time-btn { transition: all 0.15s; }
     .time-btn:hover { background: #e5e7eb; }
     .time-btn.active { background: #3b82f6; color: white; }
-    .line-toggle { cursor: pointer; user-select: none; padding: 4px 8px; border-radius: 4px; transition: all 0.15s; }
-    .line-toggle:hover { background: #f3f4f6; }
-    .line-toggle.disabled { opacity: 0.4; }
-    .line-toggle.disabled .toggle-label { text-decoration: line-through; }
     .winner { background: #dcfce7; }
-    .loser { background: #fef3c7; }
-    @media (max-width: 768px) {
-      .header-meta { flex-direction: column; gap: 8px; }
-      .header-meta > div { text-align: left !important; }
-    }
-    @media print { .no-print { display: none !important; } }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
   
   <div id="loading" class="flex items-center justify-center min-h-screen">
-    <div class="text-center"><div class="loading text-4xl mb-4">📊</div><p class="text-gray-600">Loading dashboard data...</p></div>
+    <div class="text-center">
+      <div class="text-4xl mb-4">📊</div>
+      <p class="text-gray-600">Loading dashboard data...</p>
+    </div>
   </div>
   
   <div id="error" class="hidden max-w-2xl mx-auto mt-12 bg-red-50 border border-red-200 rounded-lg p-6">
-    <h2 class="text-xl font-bold text-red-800 mb-4">⚠️ Data Loading Failed</h2>
+    <h2 class="text-xl font-bold text-red-800 mb-4">Data Loading Failed</h2>
     <div id="error-details" class="bg-white rounded p-4 border border-red-200 font-mono text-sm text-red-600"></div>
   </div>
   
-  <div id="stale-warning" class="hidden bg-amber-100 border-b border-amber-300 px-4 py-2 text-center text-amber-800 text-sm">
-    ⚠️ <strong>Data may be stale.</strong> Signal date is more than 45 days old.
-  </div>
-  
   <div id="app" class="hidden">
-    
     <header class="bg-white border-b shadow-sm">
       <div class="max-w-7xl mx-auto px-4 py-3">
         <div class="flex items-center justify-between flex-wrap gap-4">
@@ -55,47 +41,20 @@
             <h1 class="text-2xl font-bold text-gray-800">MV-FRAR Research Dashboard</h1>
             <p class="text-sm text-gray-500">Version <span id="header-version">-</span></p>
           </div>
-          <div class="flex items-center gap-6 header-meta">
+          <div class="flex items-center gap-6">
             <div class="text-right text-xs">
-              <p class="text-gray-400">Data Updated</p>
-              <p id="header-generated" class="font-mono text-gray-600">-</p>
-              <p id="header-freshness" class="text-gray-400 text-[10px]"></p>
-            </div>
-            <div class="text-right text-xs">
-              <p class="text-gray-400">Signal (month-end)</p>
+              <p class="text-gray-400">Signal Date</p>
               <p id="header-signal-date" class="font-mono font-semibold">-</p>
             </div>
-            <div class="text-right text-xs">
-              <p class="text-gray-400">Data Hash</p>
-              <p id="header-hash" class="font-mono text-gray-600">-</p>
+            <div>
+              <span id="header-regime" class="inline-block px-3 py-1 text-sm font-semibold rounded-full regime-LOW">-</span>
             </div>
-            <div><span id="header-regime" class="inline-block px-3 py-1 text-sm font-semibold rounded-full regime-LOW">-</span></div>
-            <div class="relative no-print">
-              <button onclick="toggleDownloads(event)" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm font-medium flex items-center gap-1">📥 Downloads ▼</button>
-              <div id="downloads-menu" class="hidden absolute right-0 mt-1 w-48 bg-white border rounded-lg shadow-lg z-50">
-                <a href="./outputs/latest_signal.json" download onclick="closeDownloads()" class="block px-4 py-2 hover:bg-gray-50 text-sm">📄 latest_signal.json</a>
-                <a href="./outputs/metrics.json" download onclick="closeDownloads()" class="block px-4 py-2 hover:bg-gray-50 text-sm">📈 metrics.json</a>
-                <a href="./outputs/audit.csv" download onclick="closeDownloads()" class="block px-4 py-2 hover:bg-gray-50 text-sm">📊 audit.csv</a>
-                <a href="./outputs/tearsheet.pdf" download onclick="closeDownloads()" class="block px-4 py-2 hover:bg-gray-50 text-sm">📑 tearsheet.pdf</a>
-              </div>
-            </div>
-            <button onclick="toggleDisclosures()" class="px-3 py-2 text-amber-700 bg-amber-50 hover:bg-amber-100 rounded text-sm font-medium no-print">⚠️ Disclosures</button>
           </div>
-        </div>
-        <div id="disclosures-panel" class="hidden mt-4 bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
-          <p class="font-semibold mb-2">⚠️ Research System Disclosures</p>
-          <ul class="list-disc list-inside space-y-1">
-            <li>This is a <strong>research prototype</strong> — not a live trading system or investment recommendation</li>
-            <li>Signals update monthly at month-end; execution assumes T+1 business day</li>
-            <li>Past performance does not guarantee future results</li>
-            <li>Sharpe ratio assumes risk-free rate of 0%</li>
-            <li>Data source: Yahoo Finance adjusted close prices</li>
-          </ul>
         </div>
       </div>
     </header>
     
-    <nav class="bg-white border-b sticky top-0 z-40 no-print">
+    <nav class="bg-white border-b sticky top-0 z-40">
       <div class="max-w-7xl mx-auto px-4">
         <div class="flex gap-1 overflow-x-auto" id="tabs">
           <button onclick="showTab('overview')" id="tab-overview" class="px-4 py-3 text-sm font-medium border-b-2 border-transparent hover:text-gray-700 tab-active">Overview</button>
@@ -119,45 +78,37 @@
             <h3 class="text-lg font-bold text-gray-800 mb-4">Current Status</h3>
             <div class="flex items-center gap-4 mb-4">
               <span id="overview-regime" class="inline-block px-4 py-2 text-lg font-bold rounded-full regime-LOW">-</span>
-              <div><p class="text-sm text-gray-500">Risk Regime</p><p id="overview-regime-desc" class="text-sm font-medium">-</p></div>
+              <div>
+                <p class="text-sm text-gray-500">Risk Regime</p>
+                <p id="overview-regime-desc" class="text-sm font-medium">-</p>
+              </div>
             </div>
             <div class="space-y-2 text-sm">
               <div class="flex justify-between"><span class="text-gray-500">Equity Exposure</span><span id="overview-scalar" class="font-semibold">-</span></div>
               <div class="flex justify-between"><span class="text-gray-500">Signal Date</span><span id="overview-date" class="font-mono">-</span></div>
-              <div class="flex justify-between"><span class="text-gray-500">System Status</span><span id="overview-status" class="font-semibold text-green-600">-</span></div>
             </div>
           </div>
           <div class="bg-white rounded-lg border p-6">
             <h3 class="text-lg font-bold text-gray-800 mb-4">FRAR Net Performance</h3>
             <div class="grid grid-cols-2 gap-4">
-              <div class="text-center p-3 bg-gray-50 rounded"><p class="text-2xl font-bold text-gray-800" id="overview-cagr">-</p><p class="text-xs text-gray-500">CAGR</p></div>
-              <div class="text-center p-3 bg-gray-50 rounded"><p class="text-2xl font-bold text-gray-800" id="overview-sharpe">-</p><p class="text-xs text-gray-500">Sharpe</p></div>
-              <div class="text-center p-3 bg-gray-50 rounded"><p class="text-2xl font-bold text-gray-800" id="overview-maxdd">-</p><p class="text-xs text-gray-500">Max DD</p></div>
-              <div class="text-center p-3 bg-gray-50 rounded"><p class="text-2xl font-bold text-gray-800" id="overview-calmar">-</p><p class="text-xs text-gray-500">Calmar</p></div>
+              <div class="text-center p-3 bg-gray-50 rounded"><p class="text-2xl font-bold" id="overview-cagr">-</p><p class="text-xs text-gray-500">CAGR</p></div>
+              <div class="text-center p-3 bg-gray-50 rounded"><p class="text-2xl font-bold" id="overview-sharpe">-</p><p class="text-xs text-gray-500">Sharpe</p></div>
+              <div class="text-center p-3 bg-gray-50 rounded"><p class="text-2xl font-bold" id="overview-maxdd">-</p><p class="text-xs text-gray-500">Max DD</p></div>
+              <div class="text-center p-3 bg-gray-50 rounded"><p class="text-2xl font-bold" id="overview-calmar">-</p><p class="text-xs text-gray-500">Calmar</p></div>
             </div>
           </div>
           <div class="bg-white rounded-lg border p-6">
             <h3 class="text-lg font-bold text-gray-800 mb-4">vs 60/40 Benchmark</h3>
             <div class="space-y-3">
-              <div class="flex justify-between items-center"><span class="text-gray-600">CAGR Advantage</span><span id="overview-vs-cagr" class="font-semibold text-green-600">-</span></div>
-              <div class="flex justify-between items-center"><span class="text-gray-600">Max DD Improvement</span><span id="overview-vs-dd" class="font-semibold text-green-600">-</span></div>
-              <div class="flex justify-between items-center"><span class="text-gray-600">Sharpe Difference</span><span id="overview-vs-sharpe" class="font-semibold">-</span></div>
-              <div class="border-t pt-3 mt-3"><div class="flex justify-between items-center"><span class="text-gray-600 font-medium">Metrics Won</span><span id="overview-wins" class="font-bold text-lg">-</span></div></div>
+              <div class="flex justify-between"><span class="text-gray-600">CAGR Advantage</span><span id="overview-vs-cagr" class="font-semibold">-</span></div>
+              <div class="flex justify-between"><span class="text-gray-600">Max DD Improvement</span><span id="overview-vs-dd" class="font-semibold">-</span></div>
+              <div class="flex justify-between"><span class="text-gray-600">Metrics Won</span><span id="overview-wins" class="font-bold text-lg">-</span></div>
             </div>
           </div>
         </div>
-        <div class="bg-white rounded-lg border p-6 mb-6">
-          <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-gray-800">Last 12 Months</h3><p id="overview-year-perf" class="text-sm text-gray-500"></p></div>
-          <div class="h-48"><canvas id="chart-overview"></canvas></div>
-        </div>
         <div class="bg-white rounded-lg border p-6">
-          <h3 class="text-lg font-bold text-gray-800 mb-4">Historical Summary</h3>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div class="text-center"><p id="overview-total-return" class="text-3xl font-bold text-gray-800">-</p><p class="text-sm text-gray-500">Total Return</p></div>
-            <div class="text-center"><p id="overview-years" class="text-3xl font-bold text-gray-800">-</p><p class="text-sm text-gray-500">Years of Data</p></div>
-            <div class="text-center"><p id="overview-win-years" class="text-3xl font-bold text-gray-800">-</p><p class="text-sm text-gray-500">Years Beat 60/40</p></div>
-            <div class="text-center"><p id="overview-low-pct" class="text-3xl font-bold text-gray-800">-</p><p class="text-sm text-gray-500">Time in LOW</p></div>
-          </div>
+          <h3 class="text-lg font-bold text-gray-800 mb-4">Last 12 Months</h3>
+          <div class="h-48"><canvas id="chart-overview"></canvas></div>
         </div>
       </div>
       
@@ -165,36 +116,15 @@
       <div id="content-signal" class="tab-content hidden">
         <div class="bg-white rounded-lg border p-6">
           <h2 class="text-xl font-bold text-gray-800 mb-4">Current Signal</h2>
-          <div id="signal-vs-benchmark" class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6 text-sm">
-            <span class="font-semibold text-blue-800">vs 60/40 Benchmark:</span>
-            <span id="signal-vs-text" class="text-blue-700 ml-2">-</span>
-          </div>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div><p class="text-sm text-gray-500">Signal as-of (month-end)</p><p id="signal-asof" class="text-lg font-semibold font-mono">-</p></div>
-            <div><p class="text-sm text-gray-500">Execution Date (T+1)</p><p id="signal-exec" class="text-lg font-semibold font-mono">-</p></div>
-            <div><p class="text-sm text-gray-500">Current Regime</p><div class="mt-1"><span id="signal-regime" class="inline-block px-3 py-1 text-sm font-semibold rounded-full regime-LOW">-</span></div></div>
+            <div><p class="text-sm text-gray-500">Signal Date</p><p id="signal-asof" class="text-lg font-semibold font-mono">-</p></div>
+            <div><p class="text-sm text-gray-500">Execution Date</p><p id="signal-exec" class="text-lg font-semibold font-mono">-</p></div>
+            <div><p class="text-sm text-gray-500">Regime</p><span id="signal-regime" class="inline-block px-3 py-1 text-sm font-semibold rounded-full regime-LOW">-</span></div>
             <div><p class="text-sm text-gray-500">Equity Scalar</p><p id="signal-scalar" class="text-lg font-semibold">-</p></div>
           </div>
-          <div id="defensive-alert" class="hidden bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
-            <p class="font-semibold text-orange-800">⚠️ Defensive Mode Active</p>
-            <p class="text-sm text-orange-700">Equity sleeve disabled. Portfolio in defensive assets.</p>
-          </div>
           <div class="border-t pt-4">
-            <div class="flex justify-between items-center mb-1">
-              <h3 class="font-semibold text-gray-700">Target Weights (after 5% buffer)</h3>
-              <span id="weights-sum-check" class="text-xs text-green-600">-</span>
-            </div>
+            <h3 class="font-semibold text-gray-700 mb-3">Target Weights</h3>
             <div id="weights-container" class="max-w-lg"></div>
-          </div>
-          <div class="grid md:grid-cols-2 gap-4 mt-6">
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p class="font-semibold text-blue-800 mb-2">System Architecture</p>
-              <p class="text-sm text-blue-700">FRAR provides the risk regime and capital gating. Sector weights are the MV-FRAR demonstration sleeve.</p>
-            </div>
-            <div class="bg-gray-50 border rounded-lg p-4">
-              <p class="font-semibold text-gray-700 mb-2">Rebalance Notes</p>
-              <p class="text-sm text-gray-600">Equity exposure goes to 0% in HIGH/CRISIS regimes.</p>
-            </div>
           </div>
         </div>
       </div>
@@ -204,120 +134,67 @@
         <div class="grid md:grid-cols-3 gap-6 mb-6">
           <div class="bg-white rounded-lg border p-4">
             <h3 class="font-semibold text-gray-700 mb-3">Current Risk Inputs</h3>
-            <div class="space-y-3">
-              <div class="flex justify-between items-center"><span class="text-sm text-gray-600">Vol Percentile</span><span id="current-vol" class="font-mono font-semibold">-</span></div>
-              <div class="flex justify-between items-center"><span class="text-sm text-gray-600">Hill Alpha</span><span id="current-hill" class="font-mono font-semibold">-</span></div>
-              <div class="flex justify-between items-center"><span class="text-sm text-gray-600">Hurst Exponent</span><span id="current-hurst" class="font-mono font-semibold">-</span></div>
-              <div class="border-t pt-2 flex justify-between items-center"><span class="text-sm font-semibold text-gray-700">Risk Score</span><span id="current-risk" class="font-mono font-bold text-lg">-</span></div>
+            <div class="space-y-2">
+              <div class="flex justify-between"><span class="text-sm text-gray-600">Vol Percentile</span><span id="current-vol" class="font-mono">-</span></div>
+              <div class="flex justify-between"><span class="text-sm text-gray-600">Hill Alpha</span><span id="current-hill" class="font-mono">-</span></div>
+              <div class="flex justify-between"><span class="text-sm text-gray-600">Hurst</span><span id="current-hurst" class="font-mono">-</span></div>
+              <div class="flex justify-between border-t pt-2"><span class="font-semibold">Risk Score</span><span id="current-risk" class="font-mono font-bold">-</span></div>
             </div>
           </div>
           <div class="bg-white rounded-lg border p-4">
-            <h3 class="font-semibold text-gray-700 mb-3">Regime Thresholds</h3>
-            <div class="space-y-2 text-sm">
-              <div class="flex justify-between"><span class="text-gray-600">Median (→MID)</span><span id="thresh-median" class="font-mono">-</span></div>
-              <div class="flex justify-between"><span class="text-gray-600">75th Pctl (→HIGH)</span><span id="thresh-75" class="font-mono">-</span></div>
-              <div class="mt-3 p-2 bg-gray-50 rounded">
-                <p class="text-xs text-gray-500">Current score position:</p>
-                <div class="mt-2 h-4 bg-gradient-to-r from-green-200 via-yellow-200 to-red-200 rounded relative">
-                  <div id="thresh-median-marker" class="absolute w-0.5 h-6 -top-1 bg-orange-500" style="left: 50%"></div>
-                  <div id="thresh-75-marker" class="absolute w-0.5 h-6 -top-1 bg-red-600" style="left: 75%"></div>
-                  <div id="score-marker" class="absolute w-3 h-6 -top-1 bg-gray-800 rounded" style="left: 50%"></div>
-                </div>
-                <div class="flex justify-between text-xs text-gray-400 mt-1"><span>0 (LOW)</span><span>1 (CRISIS)</span></div>
-              </div>
+            <h3 class="font-semibold text-gray-700 mb-3">Thresholds</h3>
+            <div class="space-y-2">
+              <div class="flex justify-between"><span class="text-gray-600">Median</span><span id="thresh-median" class="font-mono">-</span></div>
+              <div class="flex justify-between"><span class="text-gray-600">75th</span><span id="thresh-75" class="font-mono">-</span></div>
             </div>
           </div>
           <div class="bg-white rounded-lg border p-4">
-            <h3 class="font-semibold text-gray-700 mb-3">How Regime is Assigned</h3>
-            <ol class="text-sm space-y-2 list-decimal list-inside text-gray-600">
-              <li><strong>LOW:</strong> Risk score &lt; median</li>
-              <li><strong>MID:</strong> Score ≥ median but &lt; 75th</li>
-              <li><strong>HIGH:</strong> Score ≥ 75th percentile</li>
-              <li><strong>CRISIS:</strong> HIGH + tail risk worsening</li>
-            </ol>
+            <h3 class="font-semibold text-gray-700 mb-3">Regime Rules</h3>
+            <ul class="text-sm space-y-1 text-gray-600">
+              <li><b>LOW:</b> Score &lt; median</li>
+              <li><b>MID:</b> Score &ge; median, &lt; 75th</li>
+              <li><b>HIGH:</b> Score &ge; 75th</li>
+              <li><b>CRISIS:</b> HIGH + tail risk</li>
+            </ul>
           </div>
         </div>
         <div class="bg-white rounded-lg border p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xl font-bold text-gray-800">Risk Score History</h2>
-            <div class="flex gap-1" id="drivers-time-controls"></div>
-          </div>
-          <div class="flex gap-2 mb-4 flex-wrap">
-            <span class="text-sm text-gray-500">Jump to:</span>
-            <button onclick="jumpToDriversPeriod('2008-01','2009-12')" class="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded">2008-09</button>
-            <button onclick="jumpToDriversPeriod('2020-01','2020-12')" class="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded">2020</button>
-            <button onclick="jumpToDriversPeriod('2022-01','2022-12')" class="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded">2022</button>
-          </div>
+          <h2 class="text-xl font-bold text-gray-800 mb-4">Risk Score History</h2>
           <div class="h-80"><canvas id="chart-drivers"></canvas></div>
-          <div class="mt-4 bg-gray-50 rounded p-3 text-sm"><strong>Formula:</strong> <code class="bg-gray-200 px-1 rounded">risk_score = 0.5×vol + 0.3×hill_risk + 0.2×(1-hurst)</code></div>
         </div>
       </div>
       
       <!-- Regimes Tab -->
       <div id="content-regime" class="tab-content hidden">
         <div class="bg-white rounded-lg border p-6">
-          <div class="flex items-center justify-between mb-4">
-            <div><h2 class="text-xl font-bold text-gray-800">Regime History</h2><p class="text-sm text-gray-500">Each box = 1 month</p></div>
-            <div class="text-sm text-gray-500">Last <span id="regime-month-count">48</span> months</div>
-          </div>
-          <div id="regime-timeline" class="flex gap-1 flex-wrap mb-2"></div>
-          <div id="regime-year-markers" class="flex gap-1 flex-wrap mb-6 text-xs text-gray-400"></div>
-          <div class="border-t pt-4">
-            <h3 class="font-semibold text-gray-700 mb-3">Distribution</h3>
-            <div id="regime-distribution"></div>
-          </div>
-          <div class="border-t pt-4 mt-4 bg-gray-50 rounded p-4">
-            <h4 class="font-semibold text-gray-700 mb-2">Regime → Equity Exposure</h4>
-            <div class="grid md:grid-cols-4 gap-4 text-sm">
-              <div><span class="inline-block px-2 py-0.5 rounded-full regime-LOW text-xs font-semibold">LOW</span><p class="mt-1 text-gray-600">100%</p></div>
-              <div><span class="inline-block px-2 py-0.5 rounded-full regime-MID text-xs font-semibold">MID</span><p class="mt-1 text-gray-600">80%</p></div>
-              <div><span class="inline-block px-2 py-0.5 rounded-full regime-HIGH text-xs font-semibold">HIGH</span><p class="mt-1 text-gray-600">50%</p></div>
-              <div><span class="inline-block px-2 py-0.5 rounded-full regime-CRISIS text-xs font-semibold">CRISIS</span><p class="mt-1 text-gray-600">20%</p></div>
-            </div>
-          </div>
+          <h2 class="text-xl font-bold text-gray-800 mb-4">Regime History</h2>
+          <p class="text-sm text-gray-500 mb-4">Each box = 1 month</p>
+          <div id="regime-timeline" class="flex gap-1 flex-wrap mb-6"></div>
+          <h3 class="font-semibold text-gray-700 mb-3">Distribution</h3>
+          <div id="regime-distribution"></div>
         </div>
       </div>
       
       <!-- vs 60/40 Tab -->
       <div id="content-vs6040" class="tab-content hidden">
         <div class="bg-white rounded-lg border p-6 mb-6">
-          <h2 class="text-xl font-bold text-gray-800 mb-2">FRAR vs 60/40 Portfolio</h2>
-          <p class="text-sm text-gray-600 mb-6">Head-to-head comparison against the traditional balanced portfolio.</p>
-          <div class="overflow-x-auto mb-6">
-            <table class="w-full text-sm">
-              <thead><tr class="bg-gray-50">
-                <th class="px-4 py-3 text-left font-semibold">Metric</th>
-                <th class="px-4 py-3 text-right font-semibold">60/40</th>
-                <th class="px-4 py-3 text-right font-semibold">FRAR Net</th>
-                <th class="px-4 py-3 text-right font-semibold">Difference</th>
-                <th class="px-4 py-3 text-center font-semibold">Winner</th>
-              </tr></thead>
-              <tbody id="vs6040-table"></tbody>
-            </table>
-          </div>
-          <div id="vs6040-verdict" class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-            <p class="font-semibold text-green-800">Summary</p>
-            <p id="vs6040-verdict-text" class="text-green-700">-</p>
-          </div>
-        </div>
-        <div class="bg-white rounded-lg border p-6 mb-6">
-          <h3 class="font-semibold text-gray-700 mb-4">Equity Curves</h3>
-          <div class="h-80"><canvas id="chart-vs6040"></canvas></div>
-        </div>
-        <div class="bg-white rounded-lg border p-6 mb-6">
-          <h3 class="font-semibold text-gray-700 mb-4">Crisis Drawdowns</h3>
-          <table class="w-full text-sm">
+          <h2 class="text-xl font-bold text-gray-800 mb-4">FRAR vs 60/40</h2>
+          <table class="w-full text-sm mb-6">
             <thead><tr class="bg-gray-50">
-              <th class="px-4 py-2 text-left">Period</th>
+              <th class="px-4 py-2 text-left">Metric</th>
               <th class="px-4 py-2 text-right">60/40</th>
-              <th class="px-4 py-2 text-right">FRAR</th>
-              <th class="px-4 py-2 text-right">Protection</th>
+              <th class="px-4 py-2 text-right">FRAR Net</th>
+              <th class="px-4 py-2 text-center">Winner</th>
             </tr></thead>
-            <tbody id="drawdown-table"></tbody>
+            <tbody id="vs6040-table"></tbody>
           </table>
         </div>
+        <div class="bg-white rounded-lg border p-6 mb-6">
+          <h3 class="font-semibold mb-4">Equity Curves</h3>
+          <div class="h-80"><canvas id="chart-vs6040"></canvas></div>
+        </div>
         <div class="bg-white rounded-lg border p-6">
-          <h3 class="font-semibold text-gray-700 mb-4">Annual Returns</h3>
+          <h3 class="font-semibold mb-4">Annual Returns</h3>
           <div class="h-64"><canvas id="chart-annual"></canvas></div>
           <p id="annual-summary" class="text-sm text-gray-600 mt-4 text-center">-</p>
         </div>
@@ -327,40 +204,20 @@
       <div id="content-performance" class="tab-content hidden">
         <div class="bg-white rounded-lg border p-6 mb-6">
           <h2 class="text-xl font-bold text-gray-800 mb-4">Performance Summary</h2>
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead><tr class="bg-gray-50">
-                <th class="px-3 py-2 text-left">Strategy</th>
-                <th class="px-3 py-2 text-right">Total</th>
-                <th class="px-3 py-2 text-right">CAGR</th>
-                <th class="px-3 py-2 text-right">Vol</th>
-                <th class="px-3 py-2 text-right">Sharpe*</th>
-                <th class="px-3 py-2 text-right">Max DD</th>
-                <th class="px-3 py-2 text-right">Calmar</th>
-              </tr></thead>
-              <tbody id="performance-table"></tbody>
-            </table>
-          </div>
-          <p class="text-xs text-gray-500 mt-2">*Sharpe assumes Rf = 0%</p>
+          <table class="w-full text-sm">
+            <thead><tr class="bg-gray-50">
+              <th class="px-3 py-2 text-left">Strategy</th>
+              <th class="px-3 py-2 text-right">CAGR</th>
+              <th class="px-3 py-2 text-right">Vol</th>
+              <th class="px-3 py-2 text-right">Sharpe</th>
+              <th class="px-3 py-2 text-right">Max DD</th>
+              <th class="px-3 py-2 text-right">Calmar</th>
+            </tr></thead>
+            <tbody id="performance-table"></tbody>
+          </table>
         </div>
         <div class="bg-white rounded-lg border p-6">
-          <div class="flex items-center justify-between mb-4 flex-wrap gap-4">
-            <h3 class="font-semibold text-gray-700">Equity Curves</h3>
-            <div class="flex items-center gap-4">
-              <div class="flex gap-1" id="equity-time-controls"></div>
-              <label class="flex items-center gap-2 text-sm cursor-pointer">
-                <input type="checkbox" id="log-scale-toggle" onchange="toggleLogScale()" class="rounded">
-                <span>Log Scale</span>
-              </label>
-            </div>
-          </div>
-          <div class="flex gap-2 mb-4 flex-wrap">
-            <span class="text-sm text-gray-500">Jump to:</span>
-            <button onclick="jumpToEquityPeriod('2008-01','2009-12')" class="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded">2008-09</button>
-            <button onclick="jumpToEquityPeriod('2020-01','2020-12')" class="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded">2020</button>
-            <button onclick="jumpToEquityPeriod('2022-01','2022-12')" class="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded">2022</button>
-          </div>
-          <div class="flex gap-2 mb-4 flex-wrap" id="line-toggles"></div>
+          <h3 class="font-semibold mb-4">Equity Curves</h3>
           <div class="h-96"><canvas id="chart-equity"></canvas></div>
         </div>
       </div>
@@ -368,7 +225,7 @@
       <!-- Costs Tab -->
       <div id="content-costs" class="tab-content hidden">
         <div class="bg-white rounded-lg border p-6 mb-6">
-          <h2 class="text-xl font-bold text-gray-800 mb-4">Turnover & Costs</h2>
+          <h2 class="text-xl font-bold text-gray-800 mb-4">Turnover</h2>
           <table class="w-full text-sm">
             <thead><tr class="bg-gray-50">
               <th class="px-3 py-2 text-left">Strategy</th>
@@ -377,11 +234,10 @@
             </tr></thead>
             <tbody id="turnover-table"></tbody>
           </table>
-          <p class="text-xs text-gray-500 mt-3">Turnover = Σ|Δw| (two-way). Cost = turnover × bps.</p>
         </div>
         <div class="bg-white rounded-lg border p-6">
-          <h3 class="font-semibold text-gray-700 mb-4">Cost Sensitivity</h3>
-          <div class="flex gap-2 mb-4 flex-wrap" id="cost-buttons"></div>
+          <h3 class="font-semibold mb-4">Cost Sensitivity</h3>
+          <div class="flex gap-2 mb-4" id="cost-buttons"></div>
           <div id="cost-details" class="bg-blue-50 rounded p-4 grid grid-cols-4 gap-4 text-center mb-4"></div>
           <div class="h-64"><canvas id="chart-costs"></canvas></div>
         </div>
@@ -392,459 +248,522 @@
         <div class="grid md:grid-cols-2 gap-6">
           <div class="bg-white rounded-lg border p-6">
             <h2 class="text-xl font-bold text-gray-800 mb-4">Data Health</h2>
-            <div class="grid grid-cols-2 gap-4 mb-6">
-              <div id="health-status" class="rounded-lg p-4 text-center bg-green-50">
-                <p class="text-sm text-gray-600">Validation</p>
-                <p class="text-2xl font-bold text-green-700">-</p>
-              </div>
-              <div class="bg-gray-50 rounded-lg p-4 text-center">
-                <p class="text-sm text-gray-600">Signal Date</p>
-                <p id="health-date" class="text-lg font-mono">-</p>
-              </div>
+            <div id="health-status" class="rounded-lg p-4 text-center bg-green-50 mb-4">
+              <p class="text-sm text-gray-600">Validation</p>
+              <p id="health-validation" class="text-2xl font-bold text-green-700">-</p>
             </div>
-            <div class="border-t pt-4 mb-4">
-              <h3 class="font-semibold text-gray-700 mb-3">Integrity Checks</h3>
-              <div id="integrity-checks" class="space-y-2"></div>
-            </div>
-            <div class="border-t pt-4">
-              <h3 class="font-semibold text-gray-700 mb-3">Parity vs 60/40</h3>
-              <div class="flex items-center gap-4 mb-4">
-                <span id="parity-status" class="inline-block px-3 py-1 text-sm font-semibold rounded bg-green-100 text-green-700">-</span>
-                <span id="parity-wins" class="text-sm text-gray-600">-</span>
-              </div>
-              <div id="parity-grid" class="grid grid-cols-2 gap-3"></div>
+            <div class="space-y-2">
+              <div class="flex justify-between"><span>Signal Date</span><span id="health-date" class="font-mono">-</span></div>
+              <div class="flex justify-between"><span>Data Hash</span><span id="health-hash" class="font-mono">-</span></div>
             </div>
           </div>
           <div class="bg-white rounded-lg border p-6">
-            <h2 class="text-xl font-bold text-gray-800 mb-4">Run Metadata</h2>
-            <div class="space-y-3">
-              <div class="flex justify-between py-2 border-b"><span class="text-gray-600">Version</span><span id="meta-version" class="font-mono font-semibold">-</span></div>
-              <div class="flex justify-between py-2 border-b"><span class="text-gray-600">Param Hash</span><span id="meta-param-hash" class="font-mono text-sm">-</span></div>
-              <div class="flex justify-between py-2 border-b"><span class="text-gray-600">Data Hash</span><span id="meta-data-hash" class="font-mono text-sm">-</span></div>
-              <div class="flex justify-between py-2 border-b"><span class="text-gray-600">Generated</span><span id="meta-generated" class="font-mono text-sm">-</span></div>
-              <div class="flex justify-between py-2"><span class="text-gray-600">Cost Assumption</span><span id="meta-cost" class="font-mono">10 bps</span></div>
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Parity Check</h2>
+            <div class="flex items-center gap-4 mb-4">
+              <span id="parity-status" class="px-3 py-1 rounded bg-green-100 text-green-700 font-semibold">-</span>
+              <span id="parity-wins" class="text-sm text-gray-600">-</span>
             </div>
+            <div id="parity-grid" class="grid grid-cols-2 gap-3"></div>
           </div>
         </div>
         <div class="bg-white rounded-lg border p-6 mt-6">
-          <h3 class="font-semibold text-gray-700 mb-4">Required Files</h3>
-          <div id="files-status" class="grid grid-cols-2 md:grid-cols-3 gap-3"></div>
+          <h3 class="font-semibold mb-4">Required Files</h3>
+          <div id="files-status" class="grid grid-cols-3 gap-3"></div>
         </div>
       </div>
       
     </main>
     
     <footer class="bg-white border-t mt-8">
-      <div class="max-w-7xl mx-auto px-4 py-4 text-center text-xs text-gray-500">MV-FRAR Research Dashboard v1.3 • For research purposes only • Not investment advice</div>
+      <div class="max-w-7xl mx-auto px-4 py-4 text-center text-xs text-gray-500">
+        MV-FRAR Research Dashboard v1.3 | For research purposes only
+      </div>
     </footer>
   </div>
 
-  <script>
-    const REQUIRED_FILES = ['manifest.json', 'latest_signal.json', 'metrics.json', 'drivers_timeseries.csv', 'equity_curves.csv', 'cost_sensitivity.json'];
-    const LINE_COLORS = { SPY_BH: '#3b82f6', '60_40': '#f59e0b', FRAR: '#10b981', FRAR_Net: '#059669' };
-    const LINE_LABELS = { SPY_BH: 'SPY Buy & Hold', '60_40': '60/40 Portfolio', FRAR: 'FRAR (gross)', FRAR_Net: 'FRAR (net, dashed)' };
-    
-    let DATA = {}, CHARTS = {}, FILE_STATUS = {};
-    let VISIBLE_LINES = { SPY_BH: true, '60_40': true, FRAR: true, FRAR_Net: true };
-    let CURRENT_TIME_RANGE = { drivers: 9999, equity: 9999 };
-    
-    function parseCSV(text) {
-      const lines = text.trim().split('\n');
-      const headers = lines[0].split(',').map(h => h.trim());
-      return lines.slice(1).map(line => {
-        const vals = [], inQ = { v: false };
-        let cur = '';
-        for (const c of line) {
-          if (c === '"') inQ.v = !inQ.v;
-          else if (c === ',' && !inQ.v) { vals.push(cur); cur = ''; }
-          else cur += c;
-        }
-        vals.push(cur);
-        const row = {};
-        headers.forEach((h, i) => { const v = vals[i] || ''; row[h] = v === '' ? null : (isNaN(v) ? v : parseFloat(v)); });
-        return row;
-      });
+<script>
+// Configuration
+var REQUIRED_FILES = ['manifest.json', 'latest_signal.json', 'metrics.json', 'drivers_timeseries.csv', 'equity_curves.csv', 'cost_sensitivity.json'];
+var LINE_COLORS = { SPY_BH: '#3b82f6', '60_40': '#f59e0b', FRAR: '#10b981', FRAR_Net: '#059669' };
+var DATA = {};
+var CHARTS = {};
+var FILE_STATUS = {};
+
+// CSV Parser
+function parseCSV(text) {
+  var lines = text.trim().split('\n');
+  var headers = lines[0].split(',');
+  var result = [];
+  for (var i = 1; i < lines.length; i++) {
+    var values = lines[i].split(',');
+    var row = {};
+    for (var j = 0; j < headers.length; j++) {
+      var h = headers[j].trim();
+      var v = values[j] ? values[j].trim() : '';
+      row[h] = v === '' ? null : (isNaN(v) ? v : parseFloat(v));
     }
-    
-    async function loadJSON(file) {
-      const r = await fetch(`./outputs/${file}?v=${Date.now()}`);
-      if (!r.ok) throw new Error(`${file}: HTTP ${r.status}`);
+    result.push(row);
+  }
+  return result;
+}
+
+// Data Loading
+function loadJSON(file) {
+  return fetch('./outputs/' + file + '?v=' + Date.now())
+    .then(function(r) {
+      if (!r.ok) throw new Error(file + ': HTTP ' + r.status);
       FILE_STATUS[file] = { ok: true };
       return r.json();
-    }
-    
-    async function loadCSV(file) {
-      const r = await fetch(`./outputs/${file}?v=${Date.now()}`);
-      if (!r.ok) throw new Error(`${file}: HTTP ${r.status}`);
+    })
+    .catch(function(e) {
+      FILE_STATUS[file] = { ok: false, error: e.message };
+      throw e;
+    });
+}
+
+function loadCSV(file) {
+  return fetch('./outputs/' + file + '?v=' + Date.now())
+    .then(function(r) {
+      if (!r.ok) throw new Error(file + ': HTTP ' + r.status);
       FILE_STATUS[file] = { ok: true };
-      return parseCSV(await r.text());
+      return r.text();
+    })
+    .then(function(text) {
+      return parseCSV(text);
+    })
+    .catch(function(e) {
+      FILE_STATUS[file] = { ok: false, error: e.message };
+      throw e;
+    });
+}
+
+function loadAllData() {
+  var errors = [];
+  return Promise.all([
+    loadJSON('manifest.json').then(function(d) { DATA.manifest = d; }).catch(function(e) { errors.push(e.message); }),
+    loadJSON('latest_signal.json').then(function(d) { DATA.signal = d; }).catch(function(e) { errors.push(e.message); }),
+    loadJSON('metrics.json').then(function(d) { DATA.metrics = d; }).catch(function(e) { errors.push(e.message); }),
+    loadCSV('drivers_timeseries.csv').then(function(d) { DATA.drivers = d; }).catch(function(e) { errors.push(e.message); }),
+    loadCSV('equity_curves.csv').then(function(d) { DATA.equity = d; }).catch(function(e) { errors.push(e.message); }),
+    loadJSON('cost_sensitivity.json').then(function(d) { DATA.costs = d; }).catch(function(e) { errors.push(e.message); })
+  ]).then(function() {
+    return errors;
+  });
+}
+
+// Helpers
+function showTab(name) {
+  var contents = document.querySelectorAll('.tab-content');
+  for (var i = 0; i < contents.length; i++) contents[i].classList.add('hidden');
+  var tabs = document.querySelectorAll('#tabs button');
+  for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('tab-active');
+  document.getElementById('content-' + name).classList.remove('hidden');
+  document.getElementById('tab-' + name).classList.add('tab-active');
+}
+
+function formatDate(d) { return d ? d.split('T')[0] : '-'; }
+function formatPct(v, dec) { return v != null ? (v * 100).toFixed(dec || 1) + '%' : '-'; }
+function formatPctSigned(v, dec) { 
+  if (v == null) return '-'; 
+  var p = (v * 100).toFixed(dec || 1); 
+  return v >= 0 ? '+' + p + '%' : p + '%'; 
+}
+
+// Render Header
+function renderHeader() {
+  var m = DATA.manifest || {};
+  var s = DATA.signal || {};
+  document.getElementById('header-version').textContent = m.version || '?';
+  document.getElementById('header-signal-date').textContent = formatDate(m.latest_signal_date);
+  var reg = s.regime || 'LOW';
+  var el = document.getElementById('header-regime');
+  el.textContent = reg;
+  el.className = 'inline-block px-3 py-1 text-sm font-semibold rounded-full regime-' + reg;
+}
+
+// Render Overview
+function renderOverview() {
+  var s = DATA.signal || {};
+  var m = DATA.metrics || {};
+  var frar = (m.strategies && m.strategies.FRAR_Net) || {};
+  var bench = (m.strategies && m.strategies['60_40']) || {};
+  
+  var reg = s.regime || 'LOW';
+  var regDesc = { LOW: 'Full equity (100%)', MID: 'Reduced (80%)', HIGH: 'Minimal (50%)', CRISIS: 'Defensive (20%)' };
+  document.getElementById('overview-regime').textContent = reg;
+  document.getElementById('overview-regime').className = 'inline-block px-4 py-2 text-lg font-bold rounded-full regime-' + reg;
+  document.getElementById('overview-regime-desc').textContent = regDesc[reg] || '-';
+  document.getElementById('overview-scalar').textContent = s.scalar ? (s.scalar * 100).toFixed(0) + '%' : '-';
+  document.getElementById('overview-date').textContent = formatDate(DATA.manifest && DATA.manifest.latest_signal_date);
+  
+  document.getElementById('overview-cagr').textContent = formatPct(frar.cagr, 2);
+  document.getElementById('overview-sharpe').textContent = frar.sharpe ? frar.sharpe.toFixed(3) : '-';
+  document.getElementById('overview-maxdd').textContent = formatPct(frar.max_dd, 1);
+  document.getElementById('overview-calmar').textContent = frar.calmar ? frar.calmar.toFixed(3) : '-';
+  
+  var cagrD = (frar.cagr || 0) - (bench.cagr || 0);
+  var ddD = (bench.max_dd || 0) - (frar.max_dd || 0);
+  document.getElementById('overview-vs-cagr').textContent = formatPctSigned(cagrD, 2);
+  document.getElementById('overview-vs-cagr').className = 'font-semibold ' + (cagrD >= 0 ? 'text-green-600' : 'text-red-600');
+  document.getElementById('overview-vs-dd').textContent = formatPctSigned(ddD, 1);
+  document.getElementById('overview-vs-dd').className = 'font-semibold ' + (ddD >= 0 ? 'text-green-600' : 'text-red-600');
+  
+  var parity = m.parity_check || {};
+  document.getElementById('overview-wins').textContent = (parity.parity_wins || 0) + '/4';
+  
+  renderOverviewChart();
+}
+
+function renderOverviewChart() {
+  var eq = (DATA.equity || []).filter(function(d) { return d.FRAR_Net != null; }).slice(-252);
+  if (eq.length === 0) return;
+  
+  var s1 = eq[0].FRAR_Net;
+  var s2 = eq[0]['60_40'];
+  var norm = eq.map(function(d) { return { date: d.date, FRAR_Net: d.FRAR_Net / s1, '60_40': d['60_40'] / s2 }; });
+  var sam = norm.filter(function(d, i) { return i % 5 === 0; });
+  
+  if (CHARTS.overview) CHARTS.overview.destroy();
+  CHARTS.overview = new Chart(document.getElementById('chart-overview'), {
+    type: 'line',
+    data: {
+      labels: sam.map(function(d) { return d.date; }),
+      datasets: [
+        { label: 'FRAR Net', data: sam.map(function(d) { return d.FRAR_Net; }), borderColor: '#059669', borderWidth: 2, fill: false, pointRadius: 0 },
+        { label: '60/40', data: sam.map(function(d) { return d['60_40']; }), borderColor: '#f59e0b', borderWidth: 2, fill: false, pointRadius: 0 }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+  });
+}
+
+// Render Signal
+function renderSignal() {
+  var s = DATA.signal || {};
+  document.getElementById('signal-asof').textContent = formatDate(s.as_of_date);
+  document.getElementById('signal-exec').textContent = formatDate(s.execution_date);
+  document.getElementById('signal-scalar').textContent = s.scalar != null ? (s.scalar * 100).toFixed(0) + '%' : '-';
+  
+  var reg = s.regime || 'LOW';
+  var el = document.getElementById('signal-regime');
+  el.textContent = reg;
+  el.className = 'inline-block px-3 py-1 text-sm font-semibold rounded-full regime-' + reg;
+  
+  var w = s.executable_weights || {};
+  var entries = Object.entries(w).sort(function(a, b) { return b[1] - a[1]; }).filter(function(e) { return e[1] > 0; });
+  var html = '';
+  entries.forEach(function(e) {
+    var ticker = e[0], weight = e[1];
+    html += '<div class="flex items-center gap-2 py-1">' +
+      '<span class="w-12 text-sm font-mono">' + ticker + '</span>' +
+      '<div class="flex-1 bg-gray-100 rounded h-5"><div class="h-full rounded bg-blue-500" style="width:' + (weight * 100) + '%"></div></div>' +
+      '<span class="w-14 text-right text-sm font-mono">' + (weight * 100).toFixed(1) + '%</span></div>';
+  });
+  document.getElementById('weights-container').innerHTML = html;
+}
+
+// Render Drivers
+function renderDrivers() {
+  var drv = DATA.drivers || [];
+  var lat = drv[drv.length - 1] || {};
+  
+  document.getElementById('current-vol').textContent = lat.vol_percentile ? lat.vol_percentile.toFixed(3) : '-';
+  document.getElementById('current-hill').textContent = lat.hill_alpha ? lat.hill_alpha.toFixed(2) : '-';
+  document.getElementById('current-hurst').textContent = lat.hurst ? lat.hurst.toFixed(3) : '-';
+  document.getElementById('current-risk').textContent = lat.risk_score ? lat.risk_score.toFixed(3) : '-';
+  document.getElementById('thresh-median').textContent = lat.threshold_median ? lat.threshold_median.toFixed(3) : '-';
+  document.getElementById('thresh-75').textContent = lat.threshold_75 ? lat.threshold_75.toFixed(3) : '-';
+  
+  if (CHARTS.drivers) CHARTS.drivers.destroy();
+  CHARTS.drivers = new Chart(document.getElementById('chart-drivers'), {
+    type: 'line',
+    data: {
+      labels: drv.map(function(d) { return d.date; }),
+      datasets: [
+        { label: 'Risk Score', data: drv.map(function(d) { return d.risk_score; }), borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', fill: true, pointRadius: 1 },
+        { label: 'Median', data: drv.map(function(d) { return d.threshold_median; }), borderColor: '#f97316', borderDash: [5, 5], fill: false, pointRadius: 0 },
+        { label: '75th', data: drv.map(function(d) { return d.threshold_75; }), borderColor: '#dc2626', borderDash: [5, 5], fill: false, pointRadius: 0 }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 1 } }, plugins: { legend: { position: 'bottom' } } }
+  });
+}
+
+// Render Regimes
+function renderRegimes() {
+  var drv = DATA.drivers || [];
+  var recent = drv.slice(-48);
+  
+  var colors = { LOW: '#dcfce7', MID: '#fef9c3', HIGH: '#fed7aa', CRISIS: '#fecaca' };
+  var txtColors = { LOW: '#166534', MID: '#854d0e', HIGH: '#9a3412', CRISIS: '#991b1b' };
+  
+  var html = '';
+  recent.forEach(function(d) {
+    var st = d.risk_state || 'LOW';
+    html += '<div class="w-7 h-7 rounded text-xs font-bold flex items-center justify-center" style="background:' + colors[st] + ';color:' + txtColors[st] + '" title="' + d.date + ': ' + st + '">' + st[0] + '</div>';
+  });
+  document.getElementById('regime-timeline').innerHTML = html;
+  
+  var counts = (DATA.metrics && DATA.metrics.regime_counts) || {};
+  var total = 0;
+  ['LOW', 'MID', 'HIGH', 'CRISIS'].forEach(function(r) { total += counts[r] || 0; });
+  var borders = { LOW: '#22c55e', MID: '#eab308', HIGH: '#f97316', CRISIS: '#ef4444' };
+  
+  var distHtml = '';
+  ['LOW', 'MID', 'HIGH', 'CRISIS'].forEach(function(r) {
+    var c = counts[r] || 0;
+    var pct = total > 0 ? ((c / total) * 100).toFixed(0) : 0;
+    distHtml += '<div class="flex items-center gap-3 mb-2">' +
+      '<span class="w-16 px-2 py-1 text-xs font-semibold rounded-full regime-' + r + ' text-center">' + r + '</span>' +
+      '<div class="flex-1 bg-gray-100 rounded h-4"><div class="h-full rounded" style="width:' + pct + '%;background:' + borders[r] + '"></div></div>' +
+      '<span class="text-sm font-mono w-24 text-right">' + c + ' mo (' + pct + '%)</span></div>';
+  });
+  document.getElementById('regime-distribution').innerHTML = distHtml;
+}
+
+// Render vs 60/40
+function renderVs6040() {
+  var m = DATA.metrics || {};
+  var frar = (m.strategies && m.strategies.FRAR_Net) || {};
+  var bench = (m.strategies && m.strategies['60_40']) || {};
+  
+  var metrics = [
+    { n: 'CAGR', f: frar.cagr, b: bench.cagr, fmt: function(v) { return formatPct(v, 2); }, hb: true },
+    { n: 'Volatility', f: frar.vol, b: bench.vol, fmt: function(v) { return formatPct(v, 1); }, hb: false },
+    { n: 'Sharpe', f: frar.sharpe, b: bench.sharpe, fmt: function(v) { return v ? v.toFixed(3) : '-'; }, hb: true },
+    { n: 'Max DD', f: frar.max_dd, b: bench.max_dd, fmt: function(v) { return formatPct(v, 1); }, hb: false },
+    { n: 'Calmar', f: frar.calmar, b: bench.calmar, fmt: function(v) { return v ? v.toFixed(3) : '-'; }, hb: true }
+  ];
+  
+  var html = '';
+  metrics.forEach(function(x) {
+    var diff = (x.f || 0) - (x.b || 0);
+    var better = x.hb ? diff > 0 : diff < 0;
+    html += '<tr><td class="px-4 py-2 font-medium">' + x.n + '</td>' +
+      '<td class="px-4 py-2 text-right font-mono ' + (!better ? 'winner' : '') + '">' + x.fmt(x.b) + '</td>' +
+      '<td class="px-4 py-2 text-right font-mono ' + (better ? 'winner' : '') + '">' + x.fmt(x.f) + '</td>' +
+      '<td class="px-4 py-2 text-center font-semibold ' + (better ? 'text-green-600' : 'text-amber-600') + '">' + (better ? 'FRAR' : '60/40') + '</td></tr>';
+  });
+  document.getElementById('vs6040-table').innerHTML = html;
+  
+  renderVs6040Chart();
+  renderAnnualChart();
+}
+
+function renderVs6040Chart() {
+  var eq = (DATA.equity || []).filter(function(d) { return d.FRAR_Net != null; });
+  var sam = eq.filter(function(d, i) { return i % 10 === 0; });
+  
+  if (CHARTS.vs6040) CHARTS.vs6040.destroy();
+  CHARTS.vs6040 = new Chart(document.getElementById('chart-vs6040'), {
+    type: 'line',
+    data: {
+      labels: sam.map(function(d) { return d.date; }),
+      datasets: [
+        { label: '60/40', data: sam.map(function(d) { return d['60_40']; }), borderColor: '#f59e0b', borderWidth: 2, fill: false, pointRadius: 0 },
+        { label: 'FRAR Net', data: sam.map(function(d) { return d.FRAR_Net; }), borderColor: '#059669', borderWidth: 2.5, fill: false, pointRadius: 0 }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+  });
+}
+
+function renderAnnualChart() {
+  var eq = DATA.equity || [];
+  var years = {};
+  eq.forEach(function(d) {
+    var y = d.date ? d.date.slice(0, 4) : null;
+    if (!y || !d.FRAR_Net) return;
+    if (!years[y]) years[y] = { first: d, last: d };
+    years[y].last = d;
+  });
+  
+  var ann = [];
+  Object.keys(years).sort().forEach(function(y) {
+    if (y < '2007') return;
+    var data = years[y];
+    ann.push({
+      y: y,
+      f: data.last.FRAR_Net / data.first.FRAR_Net - 1,
+      b: data.last['60_40'] / data.first['60_40'] - 1
+    });
+  });
+  
+  var wins = ann.filter(function(d) { return d.f > d.b; }).length;
+  document.getElementById('annual-summary').textContent = 'FRAR beat 60/40 in ' + wins + '/' + ann.length + ' years';
+  
+  if (CHARTS.annual) CHARTS.annual.destroy();
+  CHARTS.annual = new Chart(document.getElementById('chart-annual'), {
+    type: 'bar',
+    data: {
+      labels: ann.map(function(d) { return d.y; }),
+      datasets: [
+        { label: '60/40', data: ann.map(function(d) { return d.b * 100; }), backgroundColor: '#fcd34d' },
+        { label: 'FRAR Net', data: ann.map(function(d) { return d.f * 100; }), backgroundColor: '#34d399' }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { ticks: { callback: function(v) { return v + '%'; } } } } }
+  });
+}
+
+// Render Performance
+function renderPerformance() {
+  var m = DATA.metrics || {};
+  var strats = ['SPY_BH', '60_40', 'FRAR', 'FRAR_Net'];
+  
+  var html = '';
+  strats.forEach(function(n) {
+    var s = (m.strategies && m.strategies[n]) || {};
+    var isFRAR = n.indexOf('FRAR') >= 0;
+    html += '<tr class="' + (isFRAR ? 'bg-green-50' : '') + '">' +
+      '<td class="px-3 py-2 font-medium">' + n + '</td>' +
+      '<td class="px-3 py-2 text-right font-mono">' + formatPct(s.cagr, 2) + '</td>' +
+      '<td class="px-3 py-2 text-right font-mono">' + formatPct(s.vol, 1) + '</td>' +
+      '<td class="px-3 py-2 text-right font-mono">' + (s.sharpe ? s.sharpe.toFixed(3) : '-') + '</td>' +
+      '<td class="px-3 py-2 text-right font-mono">' + formatPct(s.max_dd, 1) + '</td>' +
+      '<td class="px-3 py-2 text-right font-mono">' + (s.calmar ? s.calmar.toFixed(3) : '-') + '</td></tr>';
+  });
+  document.getElementById('performance-table').innerHTML = html;
+  
+  renderEquityChart();
+}
+
+function renderEquityChart() {
+  var eq = (DATA.equity || []).filter(function(d) { return d.FRAR != null; });
+  var sam = eq.filter(function(d, i) { return i % 5 === 0; });
+  
+  if (CHARTS.equity) CHARTS.equity.destroy();
+  CHARTS.equity = new Chart(document.getElementById('chart-equity'), {
+    type: 'line',
+    data: {
+      labels: sam.map(function(d) { return d.date; }),
+      datasets: [
+        { label: 'SPY', data: sam.map(function(d) { return d.SPY_BH; }), borderColor: '#3b82f6', borderWidth: 1.5, fill: false, pointRadius: 0 },
+        { label: '60/40', data: sam.map(function(d) { return d['60_40']; }), borderColor: '#f59e0b', borderWidth: 1.5, fill: false, pointRadius: 0 },
+        { label: 'FRAR', data: sam.map(function(d) { return d.FRAR; }), borderColor: '#10b981', borderWidth: 2.5, fill: false, pointRadius: 0 },
+        { label: 'FRAR Net', data: sam.map(function(d) { return d.FRAR_Net; }), borderColor: '#059669', borderWidth: 2, borderDash: [5, 5], fill: false, pointRadius: 0 }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+  });
+}
+
+// Render Costs
+function renderCosts() {
+  var t = (DATA.metrics && DATA.metrics.turnovers) || {};
+  var html = '';
+  Object.keys(t).forEach(function(n) {
+    var v = t[n];
+    html += '<tr class="' + (n === 'FRAR' ? 'bg-green-50' : '') + '">' +
+      '<td class="px-3 py-2 font-medium">' + n + '</td>' +
+      '<td class="px-3 py-2 text-right font-mono">' + (v.annualized ? v.annualized.toFixed(2) : '-') + 'x</td>' +
+      '<td class="px-3 py-2 text-right font-mono">' + (v.cost_drag_bps ? v.cost_drag_bps.toFixed(1) : '-') + ' bps</td></tr>';
+  });
+  document.getElementById('turnover-table').innerHTML = html;
+  
+  var c = DATA.costs || {};
+  var lvls = c.cost_levels_bps || [];
+  var rows = c.rows || [];
+  
+  var btnHtml = '';
+  lvls.forEach(function(l) {
+    var isActive = l === 10;
+    btnHtml += '<button onclick="selectCost(' + l + ')" id="cost-btn-' + l + '" class="px-3 py-1 rounded text-sm font-mono ' + (isActive ? 'bg-blue-600 text-white' : 'bg-gray-100') + '">' + l + ' bps</button>';
+  });
+  document.getElementById('cost-buttons').innerHTML = btnHtml;
+  selectCost(10);
+  
+  if (CHARTS.costs) CHARTS.costs.destroy();
+  CHARTS.costs = new Chart(document.getElementById('chart-costs'), {
+    type: 'bar',
+    data: {
+      labels: rows.map(function(r) { return r.cost_bps + ' bps'; }),
+      datasets: [{ label: 'CAGR', data: rows.map(function(r) { return r.cagr * 100; }), backgroundColor: '#93c5fd' }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: function(v) { return v.toFixed(1) + '%'; } } } } }
+  });
+}
+
+function selectCost(cost) {
+  var btns = document.querySelectorAll('#cost-buttons button');
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].className = btns[i].id === 'cost-btn-' + cost ? 'px-3 py-1 rounded text-sm font-mono bg-blue-600 text-white' : 'px-3 py-1 rounded text-sm font-mono bg-gray-100';
+  }
+  var rows = (DATA.costs && DATA.costs.rows) || [];
+  var r = rows.find(function(x) { return x.cost_bps === cost; });
+  if (r) {
+    document.getElementById('cost-details').innerHTML = 
+      '<div><p class="text-xs text-gray-500">CAGR</p><p class="text-lg font-semibold">' + formatPct(r.cagr, 2) + '</p></div>' +
+      '<div><p class="text-xs text-gray-500">Sharpe</p><p class="text-lg font-semibold">' + (r.sharpe ? r.sharpe.toFixed(3) : '-') + '</p></div>' +
+      '<div><p class="text-xs text-gray-500">Max DD</p><p class="text-lg font-semibold">' + formatPct(r.max_dd, 1) + '</p></div>' +
+      '<div><p class="text-xs text-gray-500">Calmar</p><p class="text-lg font-semibold">' + (r.calmar ? r.calmar.toFixed(3) : '-') + '</p></div>';
+  }
+}
+
+// Render Health
+function renderHealth() {
+  var m = DATA.manifest || {};
+  var v = (DATA.metrics && DATA.metrics.validation) || {};
+  var p = (DATA.metrics && DATA.metrics.parity_check) || {};
+  
+  document.getElementById('health-validation').textContent = v.status || '?';
+  document.getElementById('health-validation').className = 'text-2xl font-bold ' + (v.status === 'PASS' ? 'text-green-700' : 'text-red-700');
+  document.getElementById('health-date').textContent = formatDate(m.latest_signal_date);
+  document.getElementById('health-hash').textContent = m.data_hash ? m.data_hash.slice(0, 12) : '-';
+  
+  document.getElementById('parity-status').textContent = p.parity_status || '?';
+  document.getElementById('parity-wins').textContent = 'FRAR wins ' + (p.parity_wins || 0) + '/4';
+  
+  var comps = p.parity_components || {};
+  var gridHtml = '';
+  Object.keys(comps).forEach(function(k) {
+    var x = comps[k];
+    gridHtml += '<div class="rounded-lg p-3 ' + (x.frar_wins ? 'bg-green-50' : 'bg-amber-50') + '">' +
+      '<p class="text-xs text-gray-500 uppercase">' + k.replace('_', ' ') + '</p>' +
+      '<p class="text-sm font-semibold">' + (x.frar_wins ? '✓ FRAR' : '✗ 60/40') + '</p></div>';
+  });
+  document.getElementById('parity-grid').innerHTML = gridHtml;
+  
+  var filesHtml = '';
+  REQUIRED_FILES.forEach(function(f) {
+    var ok = FILE_STATUS[f] && FILE_STATUS[f].ok;
+    filesHtml += '<div class="flex items-center gap-2 p-2 rounded ' + (ok ? 'bg-green-50' : 'bg-red-50') + '">' +
+      '<span class="' + (ok ? 'text-green-600' : 'text-red-600') + '">' + (ok ? '✓' : '✗') + '</span>' +
+      '<span class="text-sm font-mono">' + f + '</span></div>';
+  });
+  document.getElementById('files-status').innerHTML = filesHtml;
+}
+
+// Initialize
+function init() {
+  loadAllData().then(function(errors) {
+    document.getElementById('loading').classList.add('hidden');
+    
+    if (errors.length > 0 && Object.keys(DATA).length < 3) {
+      document.getElementById('error').classList.remove('hidden');
+      document.getElementById('error-details').innerHTML = errors.map(function(e) { return '• ' + e; }).join('<br>');
+      return;
     }
     
-    async function loadAllData() {
-      const errors = [];
-      try { DATA.manifest = await loadJSON('manifest.json'); } catch(e) { errors.push(e.message); FILE_STATUS['manifest.json'] = { ok: false }; }
-      try { DATA.signal = await loadJSON('latest_signal.json'); } catch(e) { errors.push(e.message); FILE_STATUS['latest_signal.json'] = { ok: false }; }
-      try { DATA.metrics = await loadJSON('metrics.json'); } catch(e) { errors.push(e.message); FILE_STATUS['metrics.json'] = { ok: false }; }
-      try { DATA.drivers = await loadCSV('drivers_timeseries.csv'); } catch(e) { errors.push(e.message); FILE_STATUS['drivers_timeseries.csv'] = { ok: false }; }
-      try { DATA.equity = await loadCSV('equity_curves.csv'); } catch(e) { errors.push(e.message); FILE_STATUS['equity_curves.csv'] = { ok: false }; }
-      try { DATA.costs = await loadJSON('cost_sensitivity.json'); } catch(e) { errors.push(e.message); FILE_STATUS['cost_sensitivity.json'] = { ok: false }; }
-      return errors;
-    }
+    document.getElementById('app').classList.remove('hidden');
     
-    function showTab(n) {
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-      document.querySelectorAll('#tabs button').forEach(el => el.classList.remove('tab-active'));
-      document.getElementById(`content-${n}`).classList.remove('hidden');
-      document.getElementById(`tab-${n}`).classList.add('tab-active');
-    }
-    function toggleDownloads(e) { e.stopPropagation(); document.getElementById('downloads-menu').classList.toggle('hidden'); }
-    function closeDownloads() { setTimeout(() => document.getElementById('downloads-menu').classList.add('hidden'), 100); }
-    function toggleDisclosures() { document.getElementById('disclosures-panel').classList.toggle('hidden'); }
-    function formatDate(d) { return d ? d.split('T')[0] : '-'; }
-    function formatPct(v, dec = 1) { return v != null ? (v * 100).toFixed(dec) + '%' : '-'; }
-    function formatPctSigned(v, dec = 1) { if (v == null) return '-'; const p = (v * 100).toFixed(dec); return v >= 0 ? `+${p}%` : `${p}%`; }
-    function daysSince(d) { return d ? Math.floor((new Date() - new Date(d.split('T')[0])) / 86400000) : 999; }
-    
-    function createTimeControls(id, cb, cur) {
-      const ranges = [{ l: '1Y', m: 12 }, { l: '3Y', m: 36 }, { l: '5Y', m: 60 }, { l: '10Y', m: 120 }, { l: 'Max', m: 9999 }];
-      document.getElementById(id).innerHTML = ranges.map(r => `<button onclick="${cb}(${r.m})" class="time-btn px-2 py-1 text-xs rounded ${cur === r.m ? 'active' : ''}" data-m="${r.m}">${r.l}</button>`).join('');
-    }
-    function setActiveTimeBtn(id, m) { document.querySelectorAll(`#${id} .time-btn`).forEach(b => b.classList.toggle('active', +b.dataset.m === m)); }
-    
-    function renderHeader() {
-      const m = DATA.manifest || {}, s = DATA.signal || {};
-      document.getElementById('header-version').textContent = m.version || '?';
-      document.getElementById('header-generated').textContent = formatDate(m.generated_at);
-      document.getElementById('header-signal-date').textContent = formatDate(m.latest_signal_date);
-      document.getElementById('header-hash').textContent = (m.data_hash || '?').slice(0, 8);
-      const days = daysSince(m.generated_at);
-      document.getElementById('header-freshness').textContent = `(${days}d ago)`;
-      if (days > 7) document.getElementById('header-freshness').classList.add('text-amber-600');
-      if (daysSince(m.latest_signal_date) > 45) document.getElementById('stale-warning').classList.remove('hidden');
-      const reg = s.regime || 'LOW';
-      const el = document.getElementById('header-regime');
-      el.textContent = reg;
-      el.className = `inline-block px-3 py-1 text-sm font-semibold rounded-full regime-${reg}`;
-    }
-    
-    function renderOverview() {
-      const s = DATA.signal || {}, m = DATA.metrics || {}, frar = m.strategies?.FRAR_Net || {}, bench = m.strategies?.['60_40'] || {}, v = m.validation || {}, counts = m.regime_counts || {};
-      const reg = s.regime || 'LOW';
-      const regDesc = { LOW: 'Full equity (100%)', MID: 'Reduced (80%)', HIGH: 'Minimal (50%)', CRISIS: 'Defensive (20%)' };
-      document.getElementById('overview-regime').textContent = reg;
-      document.getElementById('overview-regime').className = `inline-block px-4 py-2 text-lg font-bold rounded-full regime-${reg}`;
-      document.getElementById('overview-regime-desc').textContent = regDesc[reg] || '-';
-      document.getElementById('overview-scalar').textContent = s.scalar ? `${(s.scalar * 100).toFixed(0)}%` : '-';
-      document.getElementById('overview-date').textContent = formatDate(DATA.manifest?.latest_signal_date);
-      document.getElementById('overview-status').textContent = v.status === 'PASS' ? '✓ All checks passing' : '⚠️ Issues';
-      document.getElementById('overview-status').className = v.status === 'PASS' ? 'font-semibold text-green-600' : 'font-semibold text-amber-600';
-      document.getElementById('overview-cagr').textContent = formatPct(frar.cagr, 2);
-      document.getElementById('overview-sharpe').textContent = frar.sharpe?.toFixed(3) || '-';
-      document.getElementById('overview-maxdd').textContent = formatPct(frar.max_dd, 1);
-      document.getElementById('overview-calmar').textContent = frar.calmar?.toFixed(3) || '-';
-      const cagrD = (frar.cagr || 0) - (bench.cagr || 0), ddD = (bench.max_dd || 0) - (frar.max_dd || 0), shD = (frar.sharpe || 0) - (bench.sharpe || 0);
-      document.getElementById('overview-vs-cagr').textContent = formatPctSigned(cagrD, 2);
-      document.getElementById('overview-vs-cagr').className = `font-semibold ${cagrD >= 0 ? 'text-green-600' : 'text-red-600'}`;
-      document.getElementById('overview-vs-dd').textContent = formatPctSigned(ddD, 1);
-      document.getElementById('overview-vs-dd').className = `font-semibold ${ddD >= 0 ? 'text-green-600' : 'text-red-600'}`;
-      document.getElementById('overview-vs-sharpe').textContent = shD >= 0 ? `+${shD.toFixed(3)}` : shD.toFixed(3);
-      document.getElementById('overview-vs-sharpe').className = `font-semibold ${shD >= 0 ? 'text-green-600' : 'text-red-600'}`;
-      document.getElementById('overview-wins').textContent = `${m.parity_check?.parity_wins || 0}/4`;
-      const eq = DATA.equity || [];
-      const first = eq.find(d => d.FRAR_Net != null), last = eq.filter(d => d.FRAR_Net != null).pop();
-      document.getElementById('overview-total-return').textContent = first && last ? `${(last.FRAR_Net / first.FRAR_Net).toFixed(1)}x` : '-';
-      document.getElementById('overview-years').textContent = eq.length > 0 ? (eq.length / 252).toFixed(1) : '-';
-      const total = Object.values(counts).reduce((a, b) => a + b, 0);
-      document.getElementById('overview-low-pct').textContent = counts.LOW ? `${((counts.LOW / total) * 100).toFixed(0)}%` : '0%';
-      renderOverviewChart();
-    }
-    
-    function renderOverviewChart() {
-      const eq = (DATA.equity || []).filter(d => d.FRAR_Net != null).slice(-252);
-      if (!eq.length) return;
-      const s1 = eq[0].FRAR_Net, s2 = eq[0]['60_40'];
-      const norm = eq.map(d => ({ date: d.date, FRAR_Net: d.FRAR_Net / s1, '60_40': d['60_40'] / s2 }));
-      const sam = norm.filter((_, i) => i % 5 === 0);
-      document.getElementById('overview-year-perf').textContent = `FRAR: ${((norm[norm.length-1].FRAR_Net - 1) * 100).toFixed(1)}% | 60/40: ${((norm[norm.length-1]['60_40'] - 1) * 100).toFixed(1)}%`;
-      if (CHARTS.overview) CHARTS.overview.destroy();
-      CHARTS.overview = new Chart(document.getElementById('chart-overview'), {
-        type: 'line',
-        data: { labels: sam.map(d => d.date), datasets: [
-          { label: 'FRAR Net', data: sam.map(d => d.FRAR_Net), borderColor: LINE_COLORS.FRAR_Net, borderWidth: 2, fill: false, pointRadius: 0 },
-          { label: '60/40', data: sam.map(d => d['60_40']), borderColor: LINE_COLORS['60_40'], borderWidth: 2, fill: false, pointRadius: 0 }
-        ]},
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-      });
-    }
-    
-    function renderSignal() {
-      const s = DATA.signal || {}, frar = DATA.metrics?.strategies?.FRAR_Net || {}, bench = DATA.metrics?.strategies?.['60_40'] || {};
-      document.getElementById('signal-vs-text').textContent = `${formatPctSigned((frar.cagr || 0) - (bench.cagr || 0), 2)} CAGR, ${formatPctSigned((bench.max_dd || 0) - (frar.max_dd || 0), 1)} Max DD improvement`;
-      document.getElementById('signal-asof').textContent = formatDate(s.as_of_date);
-      document.getElementById('signal-exec').textContent = formatDate(s.execution_date);
-      document.getElementById('signal-scalar').textContent = s.scalar != null ? `${(s.scalar * 100).toFixed(0)}%` : '-';
-      const reg = s.regime || 'LOW';
-      const el = document.getElementById('signal-regime');
-      el.textContent = reg;
-      el.className = `inline-block px-3 py-1 text-sm font-semibold rounded-full regime-${reg}`;
-      document.getElementById('defensive-alert').classList.toggle('hidden', reg !== 'HIGH' && reg !== 'CRISIS');
-      const w = s.executable_weights || {};
-      const sum = Object.values(w).reduce((a, b) => a + b, 0);
-      document.getElementById('weights-sum-check').textContent = Math.abs(sum - 1) < 0.01 ? `✓ ${(sum*100).toFixed(1)}%` : `⚠️ ${(sum*100).toFixed(1)}%`;
-      const def = ['TLT', 'IEF', 'GLD'];
-      document.getElementById('weights-container').innerHTML = Object.entries(w).sort((a, b) => b[1] - a[1]).filter(([, v]) => v > 0).map(([t, v]) => `
-        <div class="flex items-center gap-2 py-1">
-          <span class="w-12 text-sm font-mono text-gray-600">${t}</span>
-          <div class="flex-1 bg-gray-100 rounded h-5 overflow-hidden">
-            <div class="h-full rounded" style="width:${v*100}%;background:${def.includes(t) ? '#f59e0b' : '#3b82f6'}"></div>
-          </div>
-          <span class="w-14 text-right text-sm font-mono">${(v*100).toFixed(1)}%</span>
-        </div>
-      `).join('');
-    }
-    
-    function renderDrivers(months = 9999) {
-      CURRENT_TIME_RANGE.drivers = months;
-      const all = DATA.drivers || [], drv = months >= all.length ? all : all.slice(-months);
-      const lat = all[all.length - 1] || {};
-      document.getElementById('current-vol').textContent = lat.vol_percentile?.toFixed(3) || '-';
-      document.getElementById('current-hill').textContent = lat.hill_alpha?.toFixed(2) || '-';
-      document.getElementById('current-hurst').textContent = lat.hurst?.toFixed(3) || '-';
-      document.getElementById('current-risk').textContent = lat.risk_score?.toFixed(3) || '-';
-      document.getElementById('thresh-median').textContent = lat.threshold_median?.toFixed(3) || '-';
-      document.getElementById('thresh-75').textContent = lat.threshold_75?.toFixed(3) || '-';
-      document.getElementById('score-marker').style.left = `calc(${(lat.risk_score || 0.5) * 100}% - 6px)`;
-      document.getElementById('thresh-median-marker').style.left = `${(lat.threshold_median || 0.5) * 100}%`;
-      document.getElementById('thresh-75-marker').style.left = `${(lat.threshold_75 || 0.75) * 100}%`;
-      createTimeControls('drivers-time-controls', 'updateDriversRange', months);
-      if (CHARTS.drivers) CHARTS.drivers.destroy();
-      CHARTS.drivers = new Chart(document.getElementById('chart-drivers'), {
-        type: 'line',
-        data: { labels: drv.map(d => d.date), datasets: [
-          { label: 'Risk Score', data: drv.map(d => d.risk_score), borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', fill: true, pointRadius: 1 },
-          { label: 'Median', data: drv.map(d => d.threshold_median), borderColor: '#f97316', borderDash: [5, 5], fill: false, pointRadius: 0 },
-          { label: '75th', data: drv.map(d => d.threshold_75), borderColor: '#dc2626', borderDash: [5, 5], fill: false, pointRadius: 0 }
-        ]},
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 1, title: { display: true, text: 'Risk Score (0-1)' } } }, plugins: { legend: { position: 'bottom' } } }
-      });
-    }
-    function updateDriversRange(m) { CURRENT_TIME_RANGE.drivers = m; setActiveTimeBtn('drivers-time-controls', m); renderDrivers(m); }
-    function jumpToDriversPeriod(s, e) {
-      setActiveTimeBtn('drivers-time-controls', -1);
-      const drv = (DATA.drivers || []).filter(d => d.date >= s && d.date <= e + '-31');
-      if (CHARTS.drivers) CHARTS.drivers.destroy();
-      CHARTS.drivers = new Chart(document.getElementById('chart-drivers'), {
-        type: 'line', data: { labels: drv.map(d => d.date), datasets: [
-          { label: 'Risk Score', data: drv.map(d => d.risk_score), borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', fill: true, pointRadius: 2 },
-          { label: 'Median', data: drv.map(d => d.threshold_median), borderColor: '#f97316', borderDash: [5, 5], fill: false, pointRadius: 0 },
-          { label: '75th', data: drv.map(d => d.threshold_75), borderColor: '#dc2626', borderDash: [5, 5], fill: false, pointRadius: 0 }
-        ]}, options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 1 } }, plugins: { legend: { position: 'bottom' } } }
-      });
-    }
-    
-    function renderRegimes() {
-      const drv = DATA.drivers || [], recent = drv.slice(-48);
-      document.getElementById('regime-month-count').textContent = recent.length;
-      const colors = { LOW: '#dcfce7', MID: '#fef9c3', HIGH: '#fed7aa', CRISIS: '#fecaca' };
-      const txtColors = { LOW: '#166534', MID: '#854d0e', HIGH: '#9a3412', CRISIS: '#991b1b' };
-      let curYear = '', markers = [];
-      document.getElementById('regime-timeline').innerHTML = recent.map((d, i) => {
-        const y = d.date?.slice(0, 4);
-        if (y !== curYear) { markers.push({ i, y }); curYear = y; }
-        return `<div class="w-7 h-7 rounded text-xs font-bold flex items-center justify-center cursor-help" style="background:${colors[d.risk_state]};color:${txtColors[d.risk_state]}" title="${d.date}: ${d.risk_state}\nScore: ${d.risk_score?.toFixed(3)}">${d.risk_state?.[0] || '?'}</div>`;
-      }).join('');
-      document.getElementById('regime-year-markers').innerHTML = markers.map((m, i) => {
-        const next = markers[i + 1]?.i || recent.length;
-        return `<div style="width:${(next - m.i) * 32}px" class="text-center">${m.y}</div>`;
-      }).join('');
-      const counts = DATA.metrics?.regime_counts || {}, total = Object.values(counts).reduce((a, b) => a + b, 0);
-      const borders = { LOW: '#22c55e', MID: '#eab308', HIGH: '#f97316', CRISIS: '#ef4444' };
-      document.getElementById('regime-distribution').innerHTML = ['LOW', 'MID', 'HIGH', 'CRISIS'].map(r => `
-        <div class="flex items-center gap-3 mb-2">
-          <span class="inline-block w-16 px-2 py-1 text-xs font-semibold rounded-full regime-${r} text-center">${r}</span>
-          <div class="flex-1 bg-gray-100 rounded h-4 overflow-hidden"><div class="h-full rounded" style="width:${((counts[r]||0)/total)*100}%;background:${borders[r]}"></div></div>
-          <span class="text-sm font-mono w-28 text-right">${counts[r]||0} mo (${(((counts[r]||0)/total)*100).toFixed(0)}%)</span>
-        </div>
-      `).join('');
-    }
-    
-    function renderVs6040() {
-      const frar = DATA.metrics?.strategies?.FRAR_Net || {}, bench = DATA.metrics?.strategies?.['60_40'] || {};
-      const metrics = [
-        { n: 'CAGR', f: frar.cagr, b: bench.cagr, fmt: v => formatPct(v, 2), hb: true },
-        { n: 'Volatility', f: frar.vol, b: bench.vol, fmt: v => formatPct(v, 1), hb: false },
-        { n: 'Sharpe', f: frar.sharpe, b: bench.sharpe, fmt: v => v?.toFixed(3), hb: true },
-        { n: 'Max DD', f: frar.max_dd, b: bench.max_dd, fmt: v => formatPct(v, 1), hb: false },
-        { n: 'Calmar', f: frar.calmar, b: bench.calmar, fmt: v => v?.toFixed(3), hb: true }
-      ];
-      let wins = 0;
-      document.getElementById('vs6040-table').innerHTML = metrics.map(m => {
-        const diff = (m.f || 0) - (m.b || 0);
-        const better = m.hb ? diff > 0 : diff < 0;
-        if (better) wins++;
-        const ds = m.n === 'Sharpe' || m.n === 'Calmar' ? (diff >= 0 ? `+${diff.toFixed(3)}` : diff.toFixed(3)) : formatPctSigned(diff, m.n === 'CAGR' ? 2 : 1);
-        return `<tr><td class="px-4 py-3 font-medium">${m.n}</td><td class="px-4 py-3 text-right font-mono ${!better ? 'winner' : ''}">${m.fmt(m.b)}</td><td class="px-4 py-3 text-right font-mono ${better ? 'winner' : ''}">${m.fmt(m.f)}</td><td class="px-4 py-3 text-right font-mono ${better ? 'text-green-600' : 'text-red-600'}">${ds}</td><td class="px-4 py-3 text-center font-semibold ${better ? 'text-green-600' : 'text-amber-600'}">${better ? 'FRAR' : '60/40'}</td></tr>`;
-      }).join('');
-      document.getElementById('vs6040-verdict-text').textContent = `FRAR Net wins ${wins}/5 metrics. Key: lower drawdowns (${formatPct((bench.max_dd||0)-(frar.max_dd||0), 1)} improvement) and better Calmar (${((frar.calmar||0)/(bench.calmar||1)*100-100).toFixed(0)}% higher).`;
-      renderVs6040Chart(); renderDrawdownTable(); renderAnnualChart();
-    }
-    
-    function renderVs6040Chart() {
-      const eq = (DATA.equity || []).filter(d => d.FRAR_Net != null).filter((_, i) => i % 10 === 0);
-      if (CHARTS.vs6040) CHARTS.vs6040.destroy();
-      CHARTS.vs6040 = new Chart(document.getElementById('chart-vs6040'), {
-        type: 'line', data: { labels: eq.map(d => d.date), datasets: [
-          { label: '60/40', data: eq.map(d => d['60_40']), borderColor: LINE_COLORS['60_40'], borderWidth: 2, fill: false, pointRadius: 0 },
-          { label: 'FRAR Net', data: eq.map(d => d.FRAR_Net), borderColor: LINE_COLORS.FRAR_Net, borderWidth: 2.5, fill: false, pointRadius: 0 }
-        ]}, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-      });
-    }
-    
-    function renderDrawdownTable() {
-      const crises = [{ n: '2008-09 Crisis', s: '2008-01', e: '2009-03' }, { n: '2020 COVID', s: '2020-02', e: '2020-03' }, { n: '2022 Bear', s: '2022-01', e: '2022-10' }];
-      const eq = DATA.equity || [];
-      document.getElementById('drawdown-table').innerHTML = crises.map(c => {
-        const p = eq.filter(d => d.date >= c.s && d.date <= c.e + '-31');
-        if (!p.length) return '';
-        let mF = p[0]?.FRAR_Net || 1, mB = p[0]?.['60_40'] || 1, ddF = 0, ddB = 0;
-        p.forEach(d => { if (d.FRAR_Net > mF) mF = d.FRAR_Net; if (d['60_40'] > mB) mB = d['60_40']; const cF = d.FRAR_Net / mF - 1, cB = d['60_40'] / mB - 1; if (cF < ddF) ddF = cF; if (cB < ddB) ddB = cB; });
-        return `<tr><td class="px-4 py-2 font-medium">${c.n}</td><td class="px-4 py-2 text-right font-mono text-red-600">${formatPct(ddB, 1)}</td><td class="px-4 py-2 text-right font-mono ${ddF > ddB ? 'text-green-600' : 'text-red-600'}">${formatPct(ddF, 1)}</td><td class="px-4 py-2 text-right font-mono text-green-600">${formatPctSigned(ddB - ddF, 1)}</td></tr>`;
-      }).join('');
-    }
-    
-    function renderAnnualChart() {
-      const eq = DATA.equity || [], years = {};
-      eq.forEach(d => { const y = d.date?.slice(0, 4); if (!y || !d.FRAR_Net) return; if (!years[y]) years[y] = { f: d, l: d }; years[y].l = d; });
-      const ann = Object.entries(years).map(([y, d]) => ({ y, f: d.l.FRAR_Net / d.f.FRAR_Net - 1, b: d.l['60_40'] / d.f['60_40'] - 1 })).filter(d => d.y >= '2007');
-      const wins = ann.filter(d => d.f > d.b).length;
-      document.getElementById('annual-summary').textContent = `FRAR beat 60/40 in ${wins}/${ann.length} years (${((wins/ann.length)*100).toFixed(0)}%)`;
-      document.getElementById('overview-win-years').textContent = `${wins}/${ann.length}`;
-      if (CHARTS.annual) CHARTS.annual.destroy();
-      CHARTS.annual = new Chart(document.getElementById('chart-annual'), {
-        type: 'bar', data: { labels: ann.map(d => d.y), datasets: [
-          { label: '60/40', data: ann.map(d => d.b * 100), backgroundColor: '#fcd34d' },
-          { label: 'FRAR Net', data: ann.map(d => d.f * 100), backgroundColor: '#34d399' }
-        ]}, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { ticks: { callback: v => v.toFixed(0) + '%' } } } }
-      });
-    }
-    
-    function renderPerformance(months = 9999) {
-      CURRENT_TIME_RANGE.equity = months;
-      const strats = ['SPY_BH', '60_40', 'FRAR', 'FRAR_Net'], m = DATA.metrics?.strategies || {};
-      const eq = DATA.equity || [], first = eq.find(d => d.FRAR != null), last = eq.filter(d => d.FRAR != null).pop();
-      document.getElementById('performance-table').innerHTML = strats.map(n => {
-        const s = m[n]; if (!s) return '';
-        const tr = first && last && first[n] && last[n] ? `${(last[n] / first[n]).toFixed(2)}x` : '-';
-        return `<tr class="${n.includes('FRAR') ? 'bg-green-50' : ''}"><td class="px-3 py-2 font-medium">${n}</td><td class="px-3 py-2 text-right font-mono">${tr}</td><td class="px-3 py-2 text-right font-mono">${formatPct(s.cagr, 2)}</td><td class="px-3 py-2 text-right font-mono">${formatPct(s.vol, 1)}</td><td class="px-3 py-2 text-right font-mono">${s.sharpe?.toFixed(3) || '-'}</td><td class="px-3 py-2 text-right font-mono">${formatPct(s.max_dd, 1)}</td><td class="px-3 py-2 text-right font-mono">${s.calmar?.toFixed(3) || '-'}</td></tr>`;
-      }).join('');
-      createTimeControls('equity-time-controls', 'updateEquityRange', months);
-      renderLineToggles(); renderEquityChart(months);
-    }
-    
-    function renderLineToggles() {
-      document.getElementById('line-toggles').innerHTML = Object.entries(VISIBLE_LINES).map(([k, v]) => `
-        <div onclick="toggleLine('${k}')" class="line-toggle flex items-center gap-2 ${v ? '' : 'disabled'}">
-          <span class="w-4 h-1 rounded ${k === 'FRAR_Net' ? 'border-t-2 border-dashed' : ''}" style="background:${LINE_COLORS[k]};${k === 'FRAR_Net' ? 'background:transparent;border-color:' + LINE_COLORS[k] : ''}"></span>
-          <span class="toggle-label text-sm">${LINE_LABELS[k]}</span>
-        </div>
-      `).join('');
-    }
-    function toggleLine(k) { VISIBLE_LINES[k] = !VISIBLE_LINES[k]; renderLineToggles(); renderEquityChart(CURRENT_TIME_RANGE.equity); }
-    
-    function renderEquityChart(months = 9999) {
-      const all = (DATA.equity || []).filter(d => d.FRAR != null), eq = months >= 9999 ? all : all.slice(-months * 21);
-      const sam = eq.filter((_, i) => i % 5 === 0 || i === eq.length - 1);
-      const ds = Object.entries(VISIBLE_LINES).filter(([, v]) => v).map(([k]) => ({
-        label: LINE_LABELS[k], data: sam.map(d => d[k]), borderColor: LINE_COLORS[k],
-        borderWidth: k.includes('FRAR') ? 2.5 : 1.5, borderDash: k === 'FRAR_Net' ? [5, 5] : [], fill: false, pointRadius: 0
-      }));
-      if (CHARTS.equity) CHARTS.equity.destroy();
-      const log = document.getElementById('log-scale-toggle')?.checked || false;
-      CHARTS.equity = new Chart(document.getElementById('chart-equity'), {
-        type: 'line', data: { labels: sam.map(d => d.date), datasets: ds },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { type: log ? 'logarithmic' : 'linear' } }, plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { title: c => `Date: ${c[0].label}`, label: c => `${c.dataset.label}: ${c.raw?.toFixed(3)}` } } } }
-      });
-    }
-    function updateEquityRange(m) { CURRENT_TIME_RANGE.equity = m; setActiveTimeBtn('equity-time-controls', m); renderEquityChart(m); }
-    function toggleLogScale() { renderEquityChart(CURRENT_TIME_RANGE.equity); }
-    function jumpToEquityPeriod(s, e) {
-      setActiveTimeBtn('equity-time-controls', -1);
-      const eq = (DATA.equity || []).filter(d => d.FRAR != null && d.date >= s && d.date <= e + '-31').filter((_, i) => i % 3 === 0);
-      const ds = Object.entries(VISIBLE_LINES).filter(([, v]) => v).map(([k]) => ({ label: LINE_LABELS[k], data: eq.map(d => d[k]), borderColor: LINE_COLORS[k], borderWidth: 2, borderDash: k === 'FRAR_Net' ? [5, 5] : [], fill: false, pointRadius: 0 }));
-      if (CHARTS.equity) CHARTS.equity.destroy();
-      CHARTS.equity = new Chart(document.getElementById('chart-equity'), { type: 'line', data: { labels: eq.map(d => d.date), datasets: ds }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } });
-    }
-    
-    function renderCosts() {
-      const t = DATA.metrics?.turnovers || {};
-      document.getElementById('turnover-table').innerHTML = Object.entries(t).map(([n, v]) => `
-        <tr class="${n === 'FRAR' ? 'bg-green-50' : ''}"><td class="px-3 py-2 font-medium">${n}</td><td class="px-3 py-2 text-right font-mono">${v.annualized?.toFixed(2)}x</td><td class="px-3 py-2 text-right font-mono">${v.cost_drag_bps?.toFixed(1)} bps</td></tr>
-      `).join('');
-      const c = DATA.costs || {}, lvls = c.cost_levels_bps || [], rows = c.rows || [];
-      document.getElementById('cost-buttons').innerHTML = lvls.map(l => `<button onclick="selectCost(${l})" id="cost-btn-${l}" class="px-3 py-1 rounded text-sm font-mono ${l === 10 ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}">${l} bps</button>`).join('');
-      selectCost(10);
-      const minC = Math.min(...rows.map(r => r.cagr)) * 100, yMin = Math.floor(minC - 0.5);
-      if (CHARTS.costs) CHARTS.costs.destroy();
-      CHARTS.costs = new Chart(document.getElementById('chart-costs'), {
-        type: 'bar', data: { labels: rows.map(r => `${r.cost_bps} bps`), datasets: [{ label: 'CAGR', data: rows.map(r => r.cagr * 100), backgroundColor: '#93c5fd' }] },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: yMin, ticks: { callback: v => v.toFixed(1) + '%' } } }, plugins: { legend: { display: false } } }
-      });
-    }
-    function selectCost(c) {
-      document.querySelectorAll('#cost-buttons button').forEach(b => b.className = b.id === `cost-btn-${c}` ? 'px-3 py-1 rounded text-sm font-mono bg-blue-600 text-white' : 'px-3 py-1 rounded text-sm font-mono bg-gray-100 hover:bg-gray-200');
-      const r = (DATA.costs?.rows || []).find(x => x.cost_bps === c);
-      if (r) document.getElementById('cost-details').innerHTML = `<div><p class="text-xs text-gray-500">CAGR</p><p class="text-lg font-semibold">${formatPct(r.cagr, 2)}</p></div><div><p class="text-xs text-gray-500">Sharpe</p><p class="text-lg font-semibold">${r.sharpe?.toFixed(3)}</p></div><div><p class="text-xs text-gray-500">Max DD</p><p class="text-lg font-semibold">${formatPct(r.max_dd, 1)}</p></div><div><p class="text-xs text-gray-500">Calmar</p><p class="text-lg font-semibold">${r.calmar?.toFixed(3)}</p></div>`;
-    }
-    
-    function renderHealth() {
-      const m = DATA.manifest || {}, v = DATA.metrics?.validation || {}, p = DATA.metrics?.parity_check || {};
-      const el = document.getElementById('health-status');
-      el.innerHTML = `<p class="text-sm text-gray-600">Validation</p><p class="text-2xl font-bold ${v.status === 'PASS' ? 'text-green-700' : 'text-red-700'}">${v.status || '?'}</p>`;
-      el.className = `rounded-lg p-4 text-center ${v.status === 'PASS' ? 'bg-green-50' : 'bg-red-50'}`;
-      document.getElementById('health-date').textContent = formatDate(m.latest_signal_date);
-      
-      const checks = [];
-      const w = DATA.signal?.executable_weights || {}, wSum = Object.values(w).reduce((a, b) => a + b, 0);
-      checks.push({ n: 'Weights = 100%', ok: Math.abs(wSum - 1) < 0.01, d: `${(wSum*100).toFixed(1)}%` });
-      const drv = DATA.drivers || []; let gaps = 0;
-      for (let i = 1; i < drv.length; i++) { if ((new Date(drv[i].date) - new Date(drv[i-1].date)) / 86400000 > 45) gaps++; }
-      checks.push({ n: 'Date continuity', ok: gaps === 0, d: gaps === 0 ? 'No gaps' : `${gaps} gaps` });
-      const sigReg = DATA.signal?.regime, drvReg = drv[drv.length-1]?.risk_state;
-      checks.push({ n: 'Regime match', ok: sigReg === drvReg, d: sigReg === drvReg ? 'OK' : `${sigReg} vs ${drvReg}` });
-      const days = daysSince(m.latest_signal_date);
-      checks.push({ n: 'Data fresh', ok: days <= 45, d: `${days}d old` });
-      document.getElementById('integrity-checks').innerHTML = checks.map(c => `<div class="flex items-center justify-between p-2 rounded ${c.ok ? 'bg-green-50' : 'bg-amber-50'}"><span class="text-sm">${c.ok ? '✓' : '⚠️'} ${c.n}</span><span class="text-xs font-mono ${c.ok ? 'text-green-600' : 'text-amber-600'}">${c.d}</span></div>`).join('');
-      
-      document.getElementById('parity-status').textContent = p.parity_status || '?';
-      document.getElementById('parity-status').className = `inline-block px-3 py-1 text-sm font-semibold rounded ${p.parity_status === 'PASS' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`;
-      document.getElementById('parity-wins').textContent = `FRAR wins ${p.parity_wins || 0}/4 metrics`;
-      const comps = p.parity_components || {};
-      document.getElementById('parity-grid').innerHTML = Object.entries(comps).map(([k, x]) => `<div class="rounded-lg p-3 ${x.frar_wins ? 'bg-green-50' : 'bg-amber-50'}"><p class="text-xs text-gray-500 uppercase">${k.replace('_', ' ')}</p><p class="text-sm font-semibold">${x.frar_wins ? '✓ FRAR' : '✗ 60/40'}</p></div>`).join('');
-      
-      document.getElementById('meta-version').textContent = m.version || '-';
-      document.getElementById('meta-param-hash').textContent = m.param_hash || '-';
-      document.getElementById('meta-data-hash').textContent = m.data_hash || '-';
-      document.getElementById('meta-generated').textContent = formatDate(m.generated_at);
-      document.getElementById('meta-cost').textContent = m.cost_bps_assumption ? `${m.cost_bps_assumption} bps` : '10 bps';
-      document.getElementById('files-status').innerHTML = REQUIRED_FILES.map(f => {
-        const ok = FILE_STATUS[f]?.ok;
-        return `<div class="flex items-center gap-2 p-2 rounded ${ok ? 'bg-green-50' : 'bg-red-50'}"><span class="${ok ? 'text-green-600' : 'text-red-600'}">${ok ? '✓' : '✗'}</span><span class="text-sm font-mono">${f}</span></div>`;
-      }).join('');
-    }
-    
-    async function init() {
-      const errors = await loadAllData();
-      document.getElementById('loading').classList.add('hidden');
-      if (errors.length > 0 && Object.keys(DATA).length < 3) {
-        document.getElementById('error').classList.remove('hidden');
-        document.getElementById('error-details').innerHTML = errors.map(e => `• ${e}`).join('<br>');
-        return;
-      }
-      document.getElementById('app').classList.remove('hidden');
-      document.addEventListener('click', e => { if (!e.target.closest('.relative')) document.getElementById('downloads-menu').classList.add('hidden'); });
-      renderHeader(); renderOverview(); renderSignal(); renderDrivers(); renderRegimes(); renderVs6040(); renderPerformance(); renderCosts(); renderHealth();
-    }
-    init();
-  </script>
+    renderHeader();
+    renderOverview();
+    renderSignal();
+    renderDrivers();
+    renderRegimes();
+    renderVs6040();
+    renderPerformance();
+    renderCosts();
+    renderHealth();
+  }).catch(function(e) {
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('error').classList.remove('hidden');
+    document.getElementById('error-details').textContent = 'Unexpected error: ' + e.message;
+  });
+}
+
+init();
+</script>
 </body>
 </html>
