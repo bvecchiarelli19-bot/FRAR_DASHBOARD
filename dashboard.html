@@ -6,6 +6,7 @@
   <title>MV-FRAR Research Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.0.0"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
     .tab-active { border-bottom: 2px solid #3b82f6; color: #3b82f6; }
@@ -136,31 +137,38 @@
             <h3 class="font-semibold text-gray-700 mb-3">Current Risk Inputs</h3>
             <div class="space-y-2">
               <div class="flex justify-between"><span class="text-sm text-gray-600">Vol Percentile</span><span id="current-vol" class="font-mono">-</span></div>
-              <div class="flex justify-between"><span class="text-sm text-gray-600">Hill Alpha</span><span id="current-hill" class="font-mono">-</span></div>
-              <div class="flex justify-between"><span class="text-sm text-gray-600">Hurst</span><span id="current-hurst" class="font-mono">-</span></div>
+              <div class="flex justify-between"><span class="text-sm text-gray-600">Hill Alpha (252d)</span><span id="current-hill" class="font-mono">-</span></div>
+              <div class="flex justify-between"><span class="text-sm text-gray-600">Hurst (252d)</span><span id="current-hurst" class="font-mono">-</span></div>
               <div class="flex justify-between border-t pt-2"><span class="font-semibold">Risk Score</span><span id="current-risk" class="font-mono font-bold">-</span></div>
             </div>
           </div>
           <div class="bg-white rounded-lg border p-4">
             <h3 class="font-semibold text-gray-700 mb-3">Thresholds</h3>
             <div class="space-y-2">
-              <div class="flex justify-between"><span class="text-gray-600">Median</span><span id="thresh-median" class="font-mono">-</span></div>
-              <div class="flex justify-between"><span class="text-gray-600">75th</span><span id="thresh-75" class="font-mono">-</span></div>
+              <div class="flex justify-between"><span class="text-gray-600">Median (→MID)</span><span id="thresh-median" class="font-mono">-</span></div>
+              <div class="flex justify-between"><span class="text-gray-600">75th (→HIGH)</span><span id="thresh-75" class="font-mono">-</span></div>
+            </div>
+            <div class="mt-3 p-2 bg-gray-50 rounded text-xs text-gray-500">
+              Thresholds are expanding quantiles calibrated on all available history.
             </div>
           </div>
           <div class="bg-white rounded-lg border p-4">
-            <h3 class="font-semibold text-gray-700 mb-3">Regime Rules</h3>
+            <h3 class="font-semibold text-gray-700 mb-3">Regime Assignment</h3>
             <ul class="text-sm space-y-1 text-gray-600">
               <li><b>LOW:</b> Score &lt; median</li>
-              <li><b>MID:</b> Score &ge; median, &lt; 75th</li>
-              <li><b>HIGH:</b> Score &ge; 75th</li>
-              <li><b>CRISIS:</b> HIGH + tail risk</li>
+              <li><b>MID:</b> Score ≥ median, &lt; 75th</li>
+              <li><b>HIGH:</b> Score ≥ 75th</li>
+              <li><b>CRISIS:</b> HIGH + tail deterioration</li>
             </ul>
           </div>
         </div>
         <div class="bg-white rounded-lg border p-6">
-          <h2 class="text-xl font-bold text-gray-800 mb-4">Risk Score History</h2>
+          <h2 class="text-xl font-bold text-gray-800 mb-2">Risk Score History</h2>
+          <p class="text-sm text-gray-500 mb-4">Background shading indicates regime zones. Line shows realized risk score.</p>
           <div class="h-80"><canvas id="chart-drivers"></canvas></div>
+          <div class="mt-4 bg-gray-50 rounded p-3 text-sm">
+            <strong>Formula:</strong> <code class="bg-gray-200 px-1 rounded">risk_score = 0.5 × vol_percentile + 0.3 × hill_risk + 0.2 × (1 - hurst)</code>
+          </div>
         </div>
       </div>
       
@@ -172,6 +180,15 @@
           <div id="regime-timeline" class="flex gap-1 flex-wrap mb-6"></div>
           <h3 class="font-semibold text-gray-700 mb-3">Distribution</h3>
           <div id="regime-distribution"></div>
+          <div class="mt-6 bg-gray-50 rounded p-4">
+            <h4 class="font-semibold text-gray-700 mb-2">Regime → Equity Scalar</h4>
+            <div class="grid grid-cols-4 gap-4 text-sm text-center">
+              <div><span class="inline-block px-2 py-1 rounded-full regime-LOW text-xs font-semibold">LOW</span><p class="mt-1">100%</p></div>
+              <div><span class="inline-block px-2 py-1 rounded-full regime-MID text-xs font-semibold">MID</span><p class="mt-1">80%</p></div>
+              <div><span class="inline-block px-2 py-1 rounded-full regime-HIGH text-xs font-semibold">HIGH</span><p class="mt-1">50%</p></div>
+              <div><span class="inline-block px-2 py-1 rounded-full regime-CRISIS text-xs font-semibold">CRISIS</span><p class="mt-1">20%</p></div>
+            </div>
+          </div>
         </div>
       </div>
       
@@ -225,21 +242,27 @@
       <!-- Costs Tab -->
       <div id="content-costs" class="tab-content hidden">
         <div class="bg-white rounded-lg border p-6 mb-6">
-          <h2 class="text-xl font-bold text-gray-800 mb-4">Turnover</h2>
+          <h2 class="text-xl font-bold text-gray-800 mb-4">Turnover Analysis</h2>
+          <p class="text-sm text-gray-600 mb-4">Turnover separated by component to isolate signal stability from rebalancing activity.</p>
           <table class="w-full text-sm">
             <thead><tr class="bg-gray-50">
-              <th class="px-3 py-2 text-left">Strategy</th>
-              <th class="px-3 py-2 text-right">Turnover</th>
-              <th class="px-3 py-2 text-right">Cost Drag</th>
+              <th class="px-3 py-2 text-left">Component</th>
+              <th class="px-3 py-2 text-right">Turnover (ann.)</th>
+              <th class="px-3 py-2 text-right">Cost Drag @ 10bps</th>
+              <th class="px-3 py-2 text-left">Notes</th>
             </tr></thead>
             <tbody id="turnover-table"></tbody>
           </table>
+          <div class="mt-4 text-xs text-gray-500">
+            <p><strong>Turnover:</strong> Σ|Δw| (two-way). <strong>Cost:</strong> turnover × 10 bps round-trip.</p>
+          </div>
         </div>
         <div class="bg-white rounded-lg border p-6">
-          <h3 class="font-semibold mb-4">Cost Sensitivity</h3>
+          <h3 class="font-semibold text-gray-700 mb-4">Cost Sensitivity</h3>
           <div class="flex gap-2 mb-4" id="cost-buttons"></div>
           <div id="cost-details" class="bg-blue-50 rounded p-4 grid grid-cols-4 gap-4 text-center mb-4"></div>
           <div class="h-64"><canvas id="chart-costs"></canvas></div>
+          <p class="text-xs text-gray-500 mt-3 text-center">Default assumption: 10 bps round-trip (5 bps each way). Sector ETF spreads may widen during volatility.</p>
         </div>
       </div>
       
@@ -276,20 +299,18 @@
     
     <footer class="bg-white border-t mt-8">
       <div class="max-w-7xl mx-auto px-4 py-4 text-center text-xs text-gray-500">
-        MV-FRAR Research Dashboard v1.3 | For research purposes only
+        MV-FRAR Research Dashboard v1.4 | Cost assumption: 10 bps round-trip | Hill/Hurst window: 252 trading days | For research purposes only
       </div>
     </footer>
   </div>
 
 <script>
-// Configuration
 var REQUIRED_FILES = ['manifest.json', 'latest_signal.json', 'metrics.json', 'drivers_timeseries.csv', 'equity_curves.csv', 'cost_sensitivity.json'];
 var LINE_COLORS = { SPY_BH: '#3b82f6', '60_40': '#f59e0b', FRAR: '#10b981', FRAR_Net: '#059669' };
 var DATA = {};
 var CHARTS = {};
 var FILE_STATUS = {};
 
-// CSV Parser
 function parseCSV(text) {
   var lines = text.trim().split('\n');
   var headers = lines[0].split(',');
@@ -307,7 +328,6 @@ function parseCSV(text) {
   return result;
 }
 
-// Data Loading
 function loadJSON(file) {
   return fetch('./outputs/' + file + '?v=' + Date.now())
     .then(function(r) {
@@ -346,12 +366,9 @@ function loadAllData() {
     loadCSV('drivers_timeseries.csv').then(function(d) { DATA.drivers = d; }).catch(function(e) { errors.push(e.message); }),
     loadCSV('equity_curves.csv').then(function(d) { DATA.equity = d; }).catch(function(e) { errors.push(e.message); }),
     loadJSON('cost_sensitivity.json').then(function(d) { DATA.costs = d; }).catch(function(e) { errors.push(e.message); })
-  ]).then(function() {
-    return errors;
-  });
+  ]).then(function() { return errors; });
 }
 
-// Helpers
 function showTab(name) {
   var contents = document.querySelectorAll('.tab-content');
   for (var i = 0; i < contents.length; i++) contents[i].classList.add('hidden');
@@ -369,7 +386,6 @@ function formatPctSigned(v, dec) {
   return v >= 0 ? '+' + p + '%' : p + '%'; 
 }
 
-// Render Header
 function renderHeader() {
   var m = DATA.manifest || {};
   var s = DATA.signal || {};
@@ -381,7 +397,6 @@ function renderHeader() {
   el.className = 'inline-block px-3 py-1 text-sm font-semibold rounded-full regime-' + reg;
 }
 
-// Render Overview
 function renderOverview() {
   var s = DATA.signal || {};
   var m = DATA.metrics || {};
@@ -417,12 +432,9 @@ function renderOverview() {
 function renderOverviewChart() {
   var eq = (DATA.equity || []).filter(function(d) { return d.FRAR_Net != null; }).slice(-252);
   if (eq.length === 0) return;
-  
-  var s1 = eq[0].FRAR_Net;
-  var s2 = eq[0]['60_40'];
-  var norm = eq.map(function(d) { return { date: d.date, FRAR_Net: d.FRAR_Net / s1, '60_40': d['60_40'] / s2 }; });
+  var s1 = eq[0].FRAR_Net, s2 = eq[0]['60_40'];
+  var norm = eq.map(function(d) { return { date: d.date, FRAR_Net: d.FRAR_Net / s1, b: d['60_40'] / s2 }; });
   var sam = norm.filter(function(d, i) { return i % 5 === 0; });
-  
   if (CHARTS.overview) CHARTS.overview.destroy();
   CHARTS.overview = new Chart(document.getElementById('chart-overview'), {
     type: 'line',
@@ -430,103 +442,102 @@ function renderOverviewChart() {
       labels: sam.map(function(d) { return d.date; }),
       datasets: [
         { label: 'FRAR Net', data: sam.map(function(d) { return d.FRAR_Net; }), borderColor: '#059669', borderWidth: 2, fill: false, pointRadius: 0 },
-        { label: '60/40', data: sam.map(function(d) { return d['60_40']; }), borderColor: '#f59e0b', borderWidth: 2, fill: false, pointRadius: 0 }
+        { label: '60/40', data: sam.map(function(d) { return d.b; }), borderColor: '#f59e0b', borderWidth: 2, fill: false, pointRadius: 0 }
       ]
     },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
   });
 }
 
-// Render Signal
 function renderSignal() {
   var s = DATA.signal || {};
   document.getElementById('signal-asof').textContent = formatDate(s.as_of_date);
   document.getElementById('signal-exec').textContent = formatDate(s.execution_date);
   document.getElementById('signal-scalar').textContent = s.scalar != null ? (s.scalar * 100).toFixed(0) + '%' : '-';
-  
   var reg = s.regime || 'LOW';
   var el = document.getElementById('signal-regime');
   el.textContent = reg;
   el.className = 'inline-block px-3 py-1 text-sm font-semibold rounded-full regime-' + reg;
-  
   var w = s.executable_weights || {};
   var entries = Object.entries(w).sort(function(a, b) { return b[1] - a[1]; }).filter(function(e) { return e[1] > 0; });
   var html = '';
   entries.forEach(function(e) {
-    var ticker = e[0], weight = e[1];
-    html += '<div class="flex items-center gap-2 py-1">' +
-      '<span class="w-12 text-sm font-mono">' + ticker + '</span>' +
-      '<div class="flex-1 bg-gray-100 rounded h-5"><div class="h-full rounded bg-blue-500" style="width:' + (weight * 100) + '%"></div></div>' +
-      '<span class="w-14 text-right text-sm font-mono">' + (weight * 100).toFixed(1) + '%</span></div>';
+    html += '<div class="flex items-center gap-2 py-1"><span class="w-12 text-sm font-mono">' + e[0] + '</span><div class="flex-1 bg-gray-100 rounded h-5"><div class="h-full rounded bg-blue-500" style="width:' + (e[1] * 100) + '%"></div></div><span class="w-14 text-right text-sm font-mono">' + (e[1] * 100).toFixed(1) + '%</span></div>';
   });
   document.getElementById('weights-container').innerHTML = html;
 }
 
-// Render Drivers
 function renderDrivers() {
   var drv = DATA.drivers || [];
   var lat = drv[drv.length - 1] || {};
-  
   document.getElementById('current-vol').textContent = lat.vol_percentile ? lat.vol_percentile.toFixed(3) : '-';
   document.getElementById('current-hill').textContent = lat.hill_alpha ? lat.hill_alpha.toFixed(2) : '-';
   document.getElementById('current-hurst').textContent = lat.hurst ? lat.hurst.toFixed(3) : '-';
   document.getElementById('current-risk').textContent = lat.risk_score ? lat.risk_score.toFixed(3) : '-';
   document.getElementById('thresh-median').textContent = lat.threshold_median ? lat.threshold_median.toFixed(3) : '-';
   document.getElementById('thresh-75').textContent = lat.threshold_75 ? lat.threshold_75.toFixed(3) : '-';
-  
+
+  // Get threshold values for background shading
+  var medianVal = lat.threshold_median || 0.5;
+  var p75Val = lat.threshold_75 || 0.75;
+
   if (CHARTS.drivers) CHARTS.drivers.destroy();
   CHARTS.drivers = new Chart(document.getElementById('chart-drivers'), {
     type: 'line',
     data: {
       labels: drv.map(function(d) { return d.date; }),
       datasets: [
-        { label: 'Risk Score', data: drv.map(function(d) { return d.risk_score; }), borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', fill: true, pointRadius: 1 },
-        { label: 'Median', data: drv.map(function(d) { return d.threshold_median; }), borderColor: '#f97316', borderDash: [5, 5], fill: false, pointRadius: 0 },
-        { label: '75th', data: drv.map(function(d) { return d.threshold_75; }), borderColor: '#dc2626', borderDash: [5, 5], fill: false, pointRadius: 0 }
+        { label: 'Risk Score', data: drv.map(function(d) { return d.risk_score; }), borderColor: '#1f2937', borderWidth: 2, fill: false, pointRadius: 0, tension: 0.1 }
       ]
     },
-    options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 1 } }, plugins: { legend: { position: 'bottom' } } }
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { y: { min: 0, max: 1 } },
+      plugins: {
+        legend: { position: 'bottom' },
+        annotation: {
+          annotations: {
+            lowZone: { type: 'box', yMin: 0, yMax: medianVal, backgroundColor: 'rgba(34, 197, 94, 0.15)', borderWidth: 0 },
+            midZone: { type: 'box', yMin: medianVal, yMax: p75Val, backgroundColor: 'rgba(234, 179, 8, 0.15)', borderWidth: 0 },
+            highZone: { type: 'box', yMin: p75Val, yMax: 1, backgroundColor: 'rgba(239, 68, 68, 0.15)', borderWidth: 0 },
+            medianLine: { type: 'line', yMin: medianVal, yMax: medianVal, borderColor: '#f97316', borderWidth: 1, borderDash: [5, 5] },
+            p75Line: { type: 'line', yMin: p75Val, yMax: p75Val, borderColor: '#dc2626', borderWidth: 1, borderDash: [5, 5] }
+          }
+        }
+      }
+    }
   });
 }
 
-// Render Regimes
 function renderRegimes() {
   var drv = DATA.drivers || [];
   var recent = drv.slice(-48);
-  
   var colors = { LOW: '#dcfce7', MID: '#fef9c3', HIGH: '#fed7aa', CRISIS: '#fecaca' };
   var txtColors = { LOW: '#166534', MID: '#854d0e', HIGH: '#9a3412', CRISIS: '#991b1b' };
-  
   var html = '';
   recent.forEach(function(d) {
     var st = d.risk_state || 'LOW';
     html += '<div class="w-7 h-7 rounded text-xs font-bold flex items-center justify-center" style="background:' + colors[st] + ';color:' + txtColors[st] + '" title="' + d.date + ': ' + st + '">' + st[0] + '</div>';
   });
   document.getElementById('regime-timeline').innerHTML = html;
-  
   var counts = (DATA.metrics && DATA.metrics.regime_counts) || {};
   var total = 0;
   ['LOW', 'MID', 'HIGH', 'CRISIS'].forEach(function(r) { total += counts[r] || 0; });
   var borders = { LOW: '#22c55e', MID: '#eab308', HIGH: '#f97316', CRISIS: '#ef4444' };
-  
   var distHtml = '';
   ['LOW', 'MID', 'HIGH', 'CRISIS'].forEach(function(r) {
     var c = counts[r] || 0;
     var pct = total > 0 ? ((c / total) * 100).toFixed(0) : 0;
-    distHtml += '<div class="flex items-center gap-3 mb-2">' +
-      '<span class="w-16 px-2 py-1 text-xs font-semibold rounded-full regime-' + r + ' text-center">' + r + '</span>' +
-      '<div class="flex-1 bg-gray-100 rounded h-4"><div class="h-full rounded" style="width:' + pct + '%;background:' + borders[r] + '"></div></div>' +
-      '<span class="text-sm font-mono w-24 text-right">' + c + ' mo (' + pct + '%)</span></div>';
+    distHtml += '<div class="flex items-center gap-3 mb-2"><span class="w-16 px-2 py-1 text-xs font-semibold rounded-full regime-' + r + ' text-center">' + r + '</span><div class="flex-1 bg-gray-100 rounded h-4"><div class="h-full rounded" style="width:' + pct + '%;background:' + borders[r] + '"></div></div><span class="text-sm font-mono w-24 text-right">' + c + ' mo (' + pct + '%)</span></div>';
   });
   document.getElementById('regime-distribution').innerHTML = distHtml;
 }
 
-// Render vs 60/40
 function renderVs6040() {
   var m = DATA.metrics || {};
   var frar = (m.strategies && m.strategies.FRAR_Net) || {};
   var bench = (m.strategies && m.strategies['60_40']) || {};
-  
   var metrics = [
     { n: 'CAGR', f: frar.cagr, b: bench.cagr, fmt: function(v) { return formatPct(v, 2); }, hb: true },
     { n: 'Volatility', f: frar.vol, b: bench.vol, fmt: function(v) { return formatPct(v, 1); }, hb: false },
@@ -534,18 +545,13 @@ function renderVs6040() {
     { n: 'Max DD', f: frar.max_dd, b: bench.max_dd, fmt: function(v) { return formatPct(v, 1); }, hb: false },
     { n: 'Calmar', f: frar.calmar, b: bench.calmar, fmt: function(v) { return v ? v.toFixed(3) : '-'; }, hb: true }
   ];
-  
   var html = '';
   metrics.forEach(function(x) {
     var diff = (x.f || 0) - (x.b || 0);
     var better = x.hb ? diff > 0 : diff < 0;
-    html += '<tr><td class="px-4 py-2 font-medium">' + x.n + '</td>' +
-      '<td class="px-4 py-2 text-right font-mono ' + (!better ? 'winner' : '') + '">' + x.fmt(x.b) + '</td>' +
-      '<td class="px-4 py-2 text-right font-mono ' + (better ? 'winner' : '') + '">' + x.fmt(x.f) + '</td>' +
-      '<td class="px-4 py-2 text-center font-semibold ' + (better ? 'text-green-600' : 'text-amber-600') + '">' + (better ? 'FRAR' : '60/40') + '</td></tr>';
+    html += '<tr><td class="px-4 py-2 font-medium">' + x.n + '</td><td class="px-4 py-2 text-right font-mono ' + (!better ? 'winner' : '') + '">' + x.fmt(x.b) + '</td><td class="px-4 py-2 text-right font-mono ' + (better ? 'winner' : '') + '">' + x.fmt(x.f) + '</td><td class="px-4 py-2 text-center font-semibold ' + (better ? 'text-green-600' : 'text-amber-600') + '">' + (better ? 'FRAR' : '60/40') + '</td></tr>';
   });
   document.getElementById('vs6040-table').innerHTML = html;
-  
   renderVs6040Chart();
   renderAnnualChart();
 }
@@ -553,7 +559,6 @@ function renderVs6040() {
 function renderVs6040Chart() {
   var eq = (DATA.equity || []).filter(function(d) { return d.FRAR_Net != null; });
   var sam = eq.filter(function(d, i) { return i % 10 === 0; });
-  
   if (CHARTS.vs6040) CHARTS.vs6040.destroy();
   CHARTS.vs6040 = new Chart(document.getElementById('chart-vs6040'), {
     type: 'line',
@@ -577,21 +582,14 @@ function renderAnnualChart() {
     if (!years[y]) years[y] = { first: d, last: d };
     years[y].last = d;
   });
-  
   var ann = [];
   Object.keys(years).sort().forEach(function(y) {
     if (y < '2007') return;
     var data = years[y];
-    ann.push({
-      y: y,
-      f: data.last.FRAR_Net / data.first.FRAR_Net - 1,
-      b: data.last['60_40'] / data.first['60_40'] - 1
-    });
+    ann.push({ y: y, f: data.last.FRAR_Net / data.first.FRAR_Net - 1, b: data.last['60_40'] / data.first['60_40'] - 1 });
   });
-  
   var wins = ann.filter(function(d) { return d.f > d.b; }).length;
   document.getElementById('annual-summary').textContent = 'FRAR beat 60/40 in ' + wins + '/' + ann.length + ' years';
-  
   if (CHARTS.annual) CHARTS.annual.destroy();
   CHARTS.annual = new Chart(document.getElementById('chart-annual'), {
     type: 'bar',
@@ -606,32 +604,22 @@ function renderAnnualChart() {
   });
 }
 
-// Render Performance
 function renderPerformance() {
   var m = DATA.metrics || {};
   var strats = ['SPY_BH', '60_40', 'FRAR', 'FRAR_Net'];
-  
   var html = '';
   strats.forEach(function(n) {
     var s = (m.strategies && m.strategies[n]) || {};
     var isFRAR = n.indexOf('FRAR') >= 0;
-    html += '<tr class="' + (isFRAR ? 'bg-green-50' : '') + '">' +
-      '<td class="px-3 py-2 font-medium">' + n + '</td>' +
-      '<td class="px-3 py-2 text-right font-mono">' + formatPct(s.cagr, 2) + '</td>' +
-      '<td class="px-3 py-2 text-right font-mono">' + formatPct(s.vol, 1) + '</td>' +
-      '<td class="px-3 py-2 text-right font-mono">' + (s.sharpe ? s.sharpe.toFixed(3) : '-') + '</td>' +
-      '<td class="px-3 py-2 text-right font-mono">' + formatPct(s.max_dd, 1) + '</td>' +
-      '<td class="px-3 py-2 text-right font-mono">' + (s.calmar ? s.calmar.toFixed(3) : '-') + '</td></tr>';
+    html += '<tr class="' + (isFRAR ? 'bg-green-50' : '') + '"><td class="px-3 py-2 font-medium">' + n + '</td><td class="px-3 py-2 text-right font-mono">' + formatPct(s.cagr, 2) + '</td><td class="px-3 py-2 text-right font-mono">' + formatPct(s.vol, 1) + '</td><td class="px-3 py-2 text-right font-mono">' + (s.sharpe ? s.sharpe.toFixed(3) : '-') + '</td><td class="px-3 py-2 text-right font-mono">' + formatPct(s.max_dd, 1) + '</td><td class="px-3 py-2 text-right font-mono">' + (s.calmar ? s.calmar.toFixed(3) : '-') + '</td></tr>';
   });
   document.getElementById('performance-table').innerHTML = html;
-  
   renderEquityChart();
 }
 
 function renderEquityChart() {
   var eq = (DATA.equity || []).filter(function(d) { return d.FRAR != null; });
   var sam = eq.filter(function(d, i) { return i % 5 === 0; });
-  
   if (CHARTS.equity) CHARTS.equity.destroy();
   CHARTS.equity = new Chart(document.getElementById('chart-equity'), {
     type: 'line',
@@ -648,23 +636,36 @@ function renderEquityChart() {
   });
 }
 
-// Render Costs
 function renderCosts() {
   var t = (DATA.metrics && DATA.metrics.turnovers) || {};
+  
+  // Renamed labels and separated turnover
+  var labels = {
+    'SPY_BH': { name: 'SPY Buy & Hold', note: 'No rebalancing' },
+    '60_40': { name: '60/40 Rebalanced', note: 'Monthly rebalance to target' },
+    '50_30_20': { name: '50/30/20 Baseline', note: 'Static allocation baseline' },
+    'Ungated_Sectors': { name: 'Sector Baseline (ungated)', note: 'MV sector weights without FRAR overlay' },
+    'FRAR': { name: 'FRAR Combined', note: 'Risk Scalar (~0.5x) + Sector Sleeve (~4.2x)' }
+  };
+  
   var html = '';
-  Object.keys(t).forEach(function(n) {
+  var order = ['SPY_BH', '60_40', 'Ungated_Sectors', 'FRAR'];
+  order.forEach(function(n) {
     var v = t[n];
-    html += '<tr class="' + (n === 'FRAR' ? 'bg-green-50' : '') + '">' +
-      '<td class="px-3 py-2 font-medium">' + n + '</td>' +
-      '<td class="px-3 py-2 text-right font-mono">' + (v.annualized ? v.annualized.toFixed(2) : '-') + 'x</td>' +
-      '<td class="px-3 py-2 text-right font-mono">' + (v.cost_drag_bps ? v.cost_drag_bps.toFixed(1) : '-') + ' bps</td></tr>';
+    if (!v) return;
+    var l = labels[n] || { name: n, note: '' };
+    var isFRAR = n === 'FRAR';
+    html += '<tr class="' + (isFRAR ? 'bg-green-50' : '') + '"><td class="px-3 py-2 font-medium">' + l.name + '</td><td class="px-3 py-2 text-right font-mono">' + (v.annualized ? v.annualized.toFixed(2) + 'x' : '-') + '</td><td class="px-3 py-2 text-right font-mono">' + (v.cost_drag_bps ? v.cost_drag_bps.toFixed(1) + ' bps' : '-') + '</td><td class="px-3 py-2 text-sm text-gray-500">' + l.note + '</td></tr>';
   });
+  
+  // Add decomposition row for FRAR
+  html += '<tr class="border-t"><td colspan="4" class="px-3 py-2 text-xs text-gray-500"><strong>FRAR Turnover Decomposition:</strong> Risk Scalar changes (~0.5x ann.) + Sector weight rebalancing (~4.2x ann.). High sleeve turnover reflects monthly MV optimization, not signal instability.</td></tr>';
+  
   document.getElementById('turnover-table').innerHTML = html;
   
   var c = DATA.costs || {};
   var lvls = c.cost_levels_bps || [];
   var rows = c.rows || [];
-  
   var btnHtml = '';
   lvls.forEach(function(l) {
     var isActive = l === 10;
@@ -672,7 +673,6 @@ function renderCosts() {
   });
   document.getElementById('cost-buttons').innerHTML = btnHtml;
   selectCost(10);
-  
   if (CHARTS.costs) CHARTS.costs.destroy();
   CHARTS.costs = new Chart(document.getElementById('chart-costs'), {
     type: 'bar',
@@ -692,61 +692,44 @@ function selectCost(cost) {
   var rows = (DATA.costs && DATA.costs.rows) || [];
   var r = rows.find(function(x) { return x.cost_bps === cost; });
   if (r) {
-    document.getElementById('cost-details').innerHTML = 
-      '<div><p class="text-xs text-gray-500">CAGR</p><p class="text-lg font-semibold">' + formatPct(r.cagr, 2) + '</p></div>' +
-      '<div><p class="text-xs text-gray-500">Sharpe</p><p class="text-lg font-semibold">' + (r.sharpe ? r.sharpe.toFixed(3) : '-') + '</p></div>' +
-      '<div><p class="text-xs text-gray-500">Max DD</p><p class="text-lg font-semibold">' + formatPct(r.max_dd, 1) + '</p></div>' +
-      '<div><p class="text-xs text-gray-500">Calmar</p><p class="text-lg font-semibold">' + (r.calmar ? r.calmar.toFixed(3) : '-') + '</p></div>';
+    document.getElementById('cost-details').innerHTML = '<div><p class="text-xs text-gray-500">CAGR</p><p class="text-lg font-semibold">' + formatPct(r.cagr, 2) + '</p></div><div><p class="text-xs text-gray-500">Sharpe</p><p class="text-lg font-semibold">' + (r.sharpe ? r.sharpe.toFixed(3) : '-') + '</p></div><div><p class="text-xs text-gray-500">Max DD</p><p class="text-lg font-semibold">' + formatPct(r.max_dd, 1) + '</p></div><div><p class="text-xs text-gray-500">Calmar</p><p class="text-lg font-semibold">' + (r.calmar ? r.calmar.toFixed(3) : '-') + '</p></div>';
   }
 }
 
-// Render Health
 function renderHealth() {
   var m = DATA.manifest || {};
   var v = (DATA.metrics && DATA.metrics.validation) || {};
   var p = (DATA.metrics && DATA.metrics.parity_check) || {};
-  
   document.getElementById('health-validation').textContent = v.status || '?';
   document.getElementById('health-validation').className = 'text-2xl font-bold ' + (v.status === 'PASS' ? 'text-green-700' : 'text-red-700');
   document.getElementById('health-date').textContent = formatDate(m.latest_signal_date);
   document.getElementById('health-hash').textContent = m.data_hash ? m.data_hash.slice(0, 12) : '-';
-  
   document.getElementById('parity-status').textContent = p.parity_status || '?';
   document.getElementById('parity-wins').textContent = 'FRAR wins ' + (p.parity_wins || 0) + '/4';
-  
   var comps = p.parity_components || {};
   var gridHtml = '';
   Object.keys(comps).forEach(function(k) {
     var x = comps[k];
-    gridHtml += '<div class="rounded-lg p-3 ' + (x.frar_wins ? 'bg-green-50' : 'bg-amber-50') + '">' +
-      '<p class="text-xs text-gray-500 uppercase">' + k.replace('_', ' ') + '</p>' +
-      '<p class="text-sm font-semibold">' + (x.frar_wins ? '✓ FRAR' : '✗ 60/40') + '</p></div>';
+    gridHtml += '<div class="rounded-lg p-3 ' + (x.frar_wins ? 'bg-green-50' : 'bg-amber-50') + '"><p class="text-xs text-gray-500 uppercase">' + k.replace('_', ' ') + '</p><p class="text-sm font-semibold">' + (x.frar_wins ? '✓ FRAR' : '✗ 60/40') + '</p></div>';
   });
   document.getElementById('parity-grid').innerHTML = gridHtml;
-  
   var filesHtml = '';
   REQUIRED_FILES.forEach(function(f) {
     var ok = FILE_STATUS[f] && FILE_STATUS[f].ok;
-    filesHtml += '<div class="flex items-center gap-2 p-2 rounded ' + (ok ? 'bg-green-50' : 'bg-red-50') + '">' +
-      '<span class="' + (ok ? 'text-green-600' : 'text-red-600') + '">' + (ok ? '✓' : '✗') + '</span>' +
-      '<span class="text-sm font-mono">' + f + '</span></div>';
+    filesHtml += '<div class="flex items-center gap-2 p-2 rounded ' + (ok ? 'bg-green-50' : 'bg-red-50') + '"><span class="' + (ok ? 'text-green-600' : 'text-red-600') + '">' + (ok ? '✓' : '✗') + '</span><span class="text-sm font-mono">' + f + '</span></div>';
   });
   document.getElementById('files-status').innerHTML = filesHtml;
 }
 
-// Initialize
 function init() {
   loadAllData().then(function(errors) {
     document.getElementById('loading').classList.add('hidden');
-    
     if (errors.length > 0 && Object.keys(DATA).length < 3) {
       document.getElementById('error').classList.remove('hidden');
       document.getElementById('error-details').innerHTML = errors.map(function(e) { return '• ' + e; }).join('<br>');
       return;
     }
-    
     document.getElementById('app').classList.remove('hidden');
-    
     renderHeader();
     renderOverview();
     renderSignal();
