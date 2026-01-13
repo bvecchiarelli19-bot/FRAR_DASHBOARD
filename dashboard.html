@@ -774,7 +774,46 @@
       if (CHARTS.equity) CHARTS.equity.destroy();
       CHARTS.equity = new Chart(document.getElementById('chart-equity'), { type: 'line', data: { labels: eq.map(d => d.date), datasets: ds }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } });
     }
-"><span class="text-sm">${c.ok ? '✓' : '⚠️'} ${c.n}</span><span class="text-xs font-mono ${c.ok ? 'text-green-600' : 'text-amber-600'}">${c.d}</span></div>`).join('');
+    
+    function renderCosts() {
+      const t = DATA.metrics?.turnovers || {};
+      document.getElementById('turnover-table').innerHTML = Object.entries(t).map(([n, v]) => `
+        <tr class="${n === 'FRAR' ? 'bg-green-50' : ''}"><td class="px-3 py-2 font-medium">${n}</td><td class="px-3 py-2 text-right font-mono">${v.annualized?.toFixed(2)}x</td><td class="px-3 py-2 text-right font-mono">${v.cost_drag_bps?.toFixed(1)} bps</td></tr>
+      `).join('');
+      const c = DATA.costs || {}, lvls = c.cost_levels_bps || [], rows = c.rows || [];
+      document.getElementById('cost-buttons').innerHTML = lvls.map(l => `<button onclick="selectCost(${l})" id="cost-btn-${l}" class="px-3 py-1 rounded text-sm font-mono ${l === 10 ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}">${l} bps</button>`).join('');
+      selectCost(10);
+      const minC = Math.min(...rows.map(r => r.cagr)) * 100, yMin = Math.floor(minC - 0.5);
+      if (CHARTS.costs) CHARTS.costs.destroy();
+      CHARTS.costs = new Chart(document.getElementById('chart-costs'), {
+        type: 'bar', data: { labels: rows.map(r => `${r.cost_bps} bps`), datasets: [{ label: 'CAGR', data: rows.map(r => r.cagr * 100), backgroundColor: '#93c5fd' }] },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: yMin, ticks: { callback: v => v.toFixed(1) + '%' } } }, plugins: { legend: { display: false } } }
+      });
+    }
+    function selectCost(c) {
+      document.querySelectorAll('#cost-buttons button').forEach(b => b.className = b.id === `cost-btn-${c}` ? 'px-3 py-1 rounded text-sm font-mono bg-blue-600 text-white' : 'px-3 py-1 rounded text-sm font-mono bg-gray-100 hover:bg-gray-200');
+      const r = (DATA.costs?.rows || []).find(x => x.cost_bps === c);
+      if (r) document.getElementById('cost-details').innerHTML = `<div><p class="text-xs text-gray-500">CAGR</p><p class="text-lg font-semibold">${formatPct(r.cagr, 2)}</p></div><div><p class="text-xs text-gray-500">Sharpe</p><p class="text-lg font-semibold">${r.sharpe?.toFixed(3)}</p></div><div><p class="text-xs text-gray-500">Max DD</p><p class="text-lg font-semibold">${formatPct(r.max_dd, 1)}</p></div><div><p class="text-xs text-gray-500">Calmar</p><p class="text-lg font-semibold">${r.calmar?.toFixed(3)}</p></div>`;
+    }
+    
+    function renderHealth() {
+      const m = DATA.manifest || {}, v = DATA.metrics?.validation || {}, p = DATA.metrics?.parity_check || {};
+      const el = document.getElementById('health-status');
+      el.innerHTML = `<p class="text-sm text-gray-600">Validation</p><p class="text-2xl font-bold ${v.status === 'PASS' ? 'text-green-700' : 'text-red-700'}">${v.status || '?'}</p>`;
+      el.className = `rounded-lg p-4 text-center ${v.status === 'PASS' ? 'bg-green-50' : 'bg-red-50'}`;
+      document.getElementById('health-date').textContent = formatDate(m.latest_signal_date);
+      
+      const checks = [];
+      const w = DATA.signal?.executable_weights || {}, wSum = Object.values(w).reduce((a, b) => a + b, 0);
+      checks.push({ n: 'Weights = 100%', ok: Math.abs(wSum - 1) < 0.01, d: `${(wSum*100).toFixed(1)}%` });
+      const drv = DATA.drivers || []; let gaps = 0;
+      for (let i = 1; i < drv.length; i++) { if ((new Date(drv[i].date) - new Date(drv[i-1].date)) / 86400000 > 45) gaps++; }
+      checks.push({ n: 'Date continuity', ok: gaps === 0, d: gaps === 0 ? 'No gaps' : `${gaps} gaps` });
+      const sigReg = DATA.signal?.regime, drvReg = drv[drv.length-1]?.risk_state;
+      checks.push({ n: 'Regime match', ok: sigReg === drvReg, d: sigReg === drvReg ? 'OK' : `${sigReg} vs ${drvReg}` });
+      const days = daysSince(m.latest_signal_date);
+      checks.push({ n: 'Data fresh', ok: days <= 45, d: `${days}d old` });
+      document.getElementById('integrity-checks').innerHTML = checks.map(c => `<div class="flex items-center justify-between p-2 rounded ${c.ok ? 'bg-green-50' : 'bg-amber-50'}"><span class="text-sm">${c.ok ? '✓' : '⚠️'} ${c.n}</span><span class="text-xs font-mono ${c.ok ? 'text-green-600' : 'text-amber-600'}">${c.d}</span></div>`).join('');
       
       document.getElementById('parity-status').textContent = p.parity_status || '?';
       document.getElementById('parity-status').className = `inline-block px-3 py-1 text-sm font-semibold rounded ${p.parity_status === 'PASS' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`;
