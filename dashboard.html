@@ -234,7 +234,16 @@
           </table>
         </div>
         <div class="bg-white rounded-lg border p-6">
-          <h3 class="font-semibold mb-4">Equity Curves</h3>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold">Equity Curves</h3>
+            <div id="equity-time-controls" class="flex gap-1">
+              <button onclick="updateEquityRange(12)" class="time-btn px-3 py-1 rounded text-sm" data-m="12">1Y</button>
+              <button onclick="updateEquityRange(36)" class="time-btn px-3 py-1 rounded text-sm" data-m="36">3Y</button>
+              <button onclick="updateEquityRange(60)" class="time-btn px-3 py-1 rounded text-sm" data-m="60">5Y</button>
+              <button onclick="updateEquityRange(120)" class="time-btn px-3 py-1 rounded text-sm" data-m="120">10Y</button>
+              <button onclick="updateEquityRange(9999)" class="time-btn px-3 py-1 rounded text-sm active" data-m="9999">Max</button>
+            </div>
+          </div>
           <div class="h-96"><canvas id="chart-equity"></canvas></div>
         </div>
       </div>
@@ -540,15 +549,15 @@ function renderVs6040() {
   var bench = (m.strategies && m.strategies['60_40']) || {};
   var metrics = [
     { n: 'CAGR', f: frar.cagr, b: bench.cagr, fmt: function(v) { return formatPct(v, 2); }, hb: true },
-    { n: 'Volatility', f: frar.vol, b: bench.vol, fmt: function(v) { return formatPct(v, 1); }, hb: false },
+    { n: 'Volatility', f: frar.vol, b: bench.vol, fmt: function(v) { return formatPct(v, 1); }, lb: true },
     { n: 'Sharpe', f: frar.sharpe, b: bench.sharpe, fmt: function(v) { return v ? v.toFixed(3) : '-'; }, hb: true },
-    { n: 'Max DD', f: frar.max_dd, b: bench.max_dd, fmt: function(v) { return formatPct(v, 1); }, hb: false },
+    { n: 'Max DD', f: frar.max_dd, b: bench.max_dd, fmt: function(v) { return formatPct(v, 1); }, hb: true },
     { n: 'Calmar', f: frar.calmar, b: bench.calmar, fmt: function(v) { return v ? v.toFixed(3) : '-'; }, hb: true }
   ];
   var html = '';
   metrics.forEach(function(x) {
     var diff = (x.f || 0) - (x.b || 0);
-    var better = x.hb ? diff > 0 : diff < 0;
+    var better = x.lb ? diff < 0 : diff > 0;
     html += '<tr><td class="px-4 py-2 font-medium">' + x.n + '</td><td class="px-4 py-2 text-right font-mono ' + (!better ? 'winner' : '') + '">' + x.fmt(x.b) + '</td><td class="px-4 py-2 text-right font-mono ' + (better ? 'winner' : '') + '">' + x.fmt(x.f) + '</td><td class="px-4 py-2 text-center font-semibold ' + (better ? 'text-green-600' : 'text-amber-600') + '">' + (better ? 'FRAR' : '60/40') + '</td></tr>';
   });
   document.getElementById('vs6040-table').innerHTML = html;
@@ -614,11 +623,26 @@ function renderPerformance() {
     html += '<tr class="' + (isFRAR ? 'bg-green-50' : '') + '"><td class="px-3 py-2 font-medium">' + n + '</td><td class="px-3 py-2 text-right font-mono">' + formatPct(s.cagr, 2) + '</td><td class="px-3 py-2 text-right font-mono">' + formatPct(s.vol, 1) + '</td><td class="px-3 py-2 text-right font-mono">' + (s.sharpe ? s.sharpe.toFixed(3) : '-') + '</td><td class="px-3 py-2 text-right font-mono">' + formatPct(s.max_dd, 1) + '</td><td class="px-3 py-2 text-right font-mono">' + (s.calmar ? s.calmar.toFixed(3) : '-') + '</td></tr>';
   });
   document.getElementById('performance-table').innerHTML = html;
-  renderEquityChart();
+  renderEquityChart(9999);
 }
 
-function renderEquityChart() {
+var CURRENT_EQUITY_RANGE = 9999;
+
+function updateEquityRange(months) {
+  CURRENT_EQUITY_RANGE = months;
+  var btns = document.querySelectorAll('#equity-time-controls .time-btn');
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].classList.toggle('active', parseInt(btns[i].dataset.m) === months);
+  }
+  renderEquityChart(months);
+}
+
+function renderEquityChart(months) {
+  months = months || 9999;
   var eq = (DATA.equity || []).filter(function(d) { return d.FRAR != null; });
+  var cutoff = months < 9999 ? eq.length - (months * 21) : 0;
+  if (cutoff < 0) cutoff = 0;
+  eq = eq.slice(cutoff);
   var sam = eq.filter(function(d, i) { return i % 5 === 0; });
   if (CHARTS.equity) CHARTS.equity.destroy();
   CHARTS.equity = new Chart(document.getElementById('chart-equity'), {
