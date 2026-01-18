@@ -1,0 +1,55 @@
+{
+  "date": "2026-01-16",
+  "frar": {
+    "regime": "MID",
+    "risk_score": 0.5899,
+    "equity_allocation": 0.8,
+    "hill_alpha": 1.9934,
+    "hurst_exponent": 0.3412,
+    "vol_percentile": 0.3163,
+    "trend_up": true
+  },
+  "quad": {
+    "regime": 3,
+    "regime_name": "Stagflation (Growth↓ Inflation↑)",
+    "growth_signal": -0.1173,
+    "inflation_signal": 0.347,
+    "growth_accelerating": false,
+    "inflation_accelerating": true,
+    "confirmed": true,
+    "confidence": "MEDIUM",
+    "growth_strength": "WEAK",
+    "inflation_strength": "MODERATE"
+  },
+  "portfolio": {
+    "XLK": 0.0904,
+    "XLF": 0.0391,
+    "XLE": 0.058,
+    "XLV": 0.1979,
+    "XLP": 0.0324,
+    "XLU": 0.26,
+    "XLI": 0.1223,
+    "TLT": 0.1,
+    "IEF": 0.06,
+    "GLD": 0.04
+  },
+  "equity_portion": {
+    "XLK": 0.0904,
+    "XLF": 0.0391,
+    "XLE": 0.058,
+    "XLV": 0.1979,
+    "XLP": 0.0324,
+    "XLU": 0.26,
+    "XLI": 0.1223
+  },
+  "defensive_portion": {
+    "TLT": 0.1,
+    "IEF": 0.06,
+    "GLD": 0.04
+  },
+  "summary": {
+    "total_equity": 0.8,
+    "total_defensive": 0.2,
+    "num_holdings": 10
+  }
+}
