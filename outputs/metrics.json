@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-01-12T22:49:10.061696",
+  "generated_at": "2026-01-19T03:56:18.314422",
   "version": "1.2.0",
   "cost_bps_assumption": 10,
   "turnover_definition": "Two-way: sum(abs(weight_new - weight_old))",
@@ -12,7 +12,7 @@
       "calmar": 0.1964,
       "worst_month": -0.1652,
       "best_month": 0.127,
-      "win_rate": 0.6778,
+      "win_rate": 0.6736,
       "total_return": 6.8178
     },
     "60_40": {
@@ -67,7 +67,7 @@
       "calmar": 0.1964,
       "worst_month": -0.1652,
       "best_month": 0.127,
-      "win_rate": 0.6778,
+      "win_rate": 0.6736,
       "total_return": 6.8178
     },
     "60_40_Net": {
@@ -142,23 +142,23 @@
     "parity_wins": 3,
     "parity_components": {
       "sharpe": {
-        "frar": 0.6708110689074466,
-        "benchmark": 0.7596474683553966,
+        "frar": 0.670810748652886,
+        "benchmark": 0.7596481571675101,
         "frar_wins": false
       },
       "max_dd": {
-        "frar": -0.2187672891418513,
-        "benchmark": -0.28194600805085324,
+        "frar": -0.21876826804789176,
+        "benchmark": -0.28194642163626465,
         "frar_wins": true
       },
       "cagr": {
-        "frar": 0.09672236145692326,
-        "benchmark": 0.08442258863220564,
+        "frar": 0.09672232721509122,
+        "benchmark": 0.08442260469241925,
         "frar_wins": true
       },
       "calmar": {
-        "frar": 0.442124422880275,
-        "benchmark": 0.299428210442968,
+        "frar": 0.44212228801810144,
+        "benchmark": 0.2994278281755664,
         "frar_wins": true
       }
     },

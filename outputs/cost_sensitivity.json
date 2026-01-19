@@ -1,5 +1,5 @@
 {
-  "turnover_annualized": 4.742334645148099,
+  "turnover_annualized": 4.742334409918066,
   "cost_levels_bps": [
     0,
     5,
@@ -47,7 +47,7 @@
     },
     {
       "cost_bps": 25,
-      "cagr": 0.084867,
+      "cagr": 0.084866,
       "sharpe": 0.5886,
       "max_dd": -0.2247,
       "calmar": 0.3777
