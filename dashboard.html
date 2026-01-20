@@ -14,23 +14,27 @@
     .regime-MID { background: #fef9c3; color: #854d0e; border: 2px solid #eab308; }
     .regime-HIGH { background: #fed7aa; color: #9a3412; border: 2px solid #f97316; }
     .regime-CRISIS { background: #fecaca; color: #991b1b; border: 2px solid #ef4444; }
+    .time-btn { transition: all 0.15s; }
+    .time-btn:hover { background: #e5e7eb; }
+    .time-btn.active { background: #3b82f6; color: white; }
+    .winner { background: #dcfce7; }
     .quad-Q1 { background: #dbeafe; color: #1e40af; border: 2px solid #3b82f6; }
     .quad-Q2 { background: #fef3c7; color: #92400e; border: 2px solid #f59e0b; }
     .quad-Q3 { background: #fee2e2; color: #991b1b; border: 2px solid #ef4444; }
     .quad-Q4 { background: #e0e7ff; color: #3730a3; border: 2px solid #6366f1; }
-    .quad-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 4px; width: 240px; height: 240px; }
-    .quad-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px; opacity: 0.4; }
+    .quad-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 4px; width: 280px; height: 280px; }
+    .quad-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.3s; opacity: 0.4; }
     .quad-cell.active { opacity: 1; transform: scale(1.02); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
     .quad-cell-Q1 { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border: 2px solid #3b82f6; }
     .quad-cell-Q2 { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; }
     .quad-cell-Q3 { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border: 2px solid #ef4444; }
     .quad-cell-Q4 { background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); border: 2px solid #6366f1; }
-    .confidence-HIGH { color: #059669; } .confidence-MEDIUM { color: #d97706; } .confidence-LOW { color: #dc2626; }
-    .strength-STRONG { background: #dcfce7; color: #166534; } .strength-MODERATE { background: #fef9c3; color: #854d0e; } .strength-WEAK { background: #fee2e2; color: #991b1b; }
-    .time-btn { transition: all 0.15s; } .time-btn:hover { background: #e5e7eb; } .time-btn.active { background: #3b82f6; color: white; }
-    .winner { background: #dcfce7; }
-    .collapsible-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
-    .collapsible-content.open { max-height: 2000px; }
+    .confidence-HIGH { color: #059669; }
+    .confidence-MEDIUM { color: #d97706; }
+    .confidence-LOW { color: #dc2626; }
+    .strength-STRONG { background: #dcfce7; color: #166534; }
+    .strength-MODERATE { background: #fef9c3; color: #854d0e; }
+    .strength-WEAK { background: #fee2e2; color: #991b1b; }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -44,15 +48,21 @@
   <div id="app" class="hidden">
     <header class="bg-white border-b shadow-sm">
       <div class="max-w-7xl mx-auto px-4 py-3">
-        <div class="flex items-center justify-between">
-          <div><h1 class="text-xl font-bold text-gray-900">MV-FRAR Research Dashboard</h1><p class="text-xs text-gray-500">Version <span id="header-version">2.1</span></p></div>
-          <div class="flex items-center gap-4">
-            <div class="text-right text-xs text-gray-500"><p>Signal Date</p><p id="header-signal-date" class="font-semibold text-gray-900">-</p></div>
-            <span id="header-regime" class="px-3 py-1 text-sm font-semibold rounded-full regime-LOW">-</span>
-            <span id="header-quad" class="px-3 py-1 text-sm font-semibold rounded-full quad-Q1">-</span>
+        <div class="flex items-center justify-between flex-wrap gap-4">
+          <div><h1 class="text-2xl font-bold text-gray-800">MV-FRAR Research Dashboard</h1><p class="text-sm text-gray-500">Version <span id="header-version">-</span></p></div>
+          <div class="flex items-center gap-6">
+            <div class="text-right text-xs"><p class="text-gray-400">Signal Date</p><p id="header-signal-date" class="font-mono font-semibold">-</p></div>
+            <div class="flex gap-2">
+              <span id="header-regime" class="inline-block px-3 py-1 text-sm font-semibold rounded-full regime-LOW">-</span>
+              <span id="header-quad" class="inline-block px-3 py-1 text-sm font-semibold rounded-full quad-Q1">-</span>
+            </div>
           </div>
         </div>
-        <nav class="flex gap-1 mt-3 -mb-px overflow-x-auto">
+      </div>
+    </header>
+    <nav class="bg-white border-b sticky top-0 z-40">
+      <div class="max-w-7xl mx-auto px-4">
+        <div class="flex gap-1 overflow-x-auto" id="tabs">
           <button onclick="showTab('overview')" id="tab-overview" class="px-4 py-3 text-sm font-medium border-b-2 border-transparent hover:text-gray-700 tab-active">Overview</button>
           <button onclick="showTab('quad')" id="tab-quad" class="px-4 py-3 text-sm font-medium border-b-2 border-transparent hover:text-gray-700">Quad</button>
           <button onclick="showTab('signal')" id="tab-signal" class="px-4 py-3 text-sm font-medium border-b-2 border-transparent hover:text-gray-700">Signal</button>
@@ -60,107 +70,105 @@
           <button onclick="showTab('performance')" id="tab-performance" class="px-4 py-3 text-sm font-medium border-b-2 border-transparent hover:text-gray-700">Performance</button>
           <button onclick="showTab('costs')" id="tab-costs" class="px-4 py-3 text-sm font-medium border-b-2 border-transparent hover:text-gray-700">Costs</button>
           <button onclick="showTab('health')" id="tab-health" class="px-4 py-3 text-sm font-medium border-b-2 border-transparent hover:text-gray-700">Health</button>
-        </nav>
+        </div>
       </div>
-    </header>
+    </nav>
     <main class="max-w-7xl mx-auto px-4 py-6">
-      <!-- Overview Tab -->
+      <!-- Overview Tab - ENHANCED -->
       <div id="content-overview" class="tab-content">
         <!-- Project Introduction -->
         <div class="bg-gradient-to-r from-slate-800 to-slate-700 rounded-lg p-6 mb-6 text-white">
-          <div class="flex items-start justify-between gap-6">
-            <div class="flex-1">
+          <div class="flex items-start justify-between">
+            <div>
               <h2 class="text-xl font-bold mb-2">Fractal Risk Allocation Research (FRAR)</h2>
-              <p class="text-slate-300 text-sm">FRAR is a <b class="text-white">risk infrastructure system</b> that detects market regime changes using fractal properties of volatility, tail risk, and market memory. It determines <em>how much</em> capital can be deployed—not <em>what</em> to buy. The Quad overlay provides macro context for sector allocation within the allowed risk budget.</p>
+              <p class="text-slate-300 text-sm max-w-2xl">FRAR is a <b>risk infrastructure system</b> that detects market regime changes using fractal properties. It determines <em>how much</em> capital can be deployed—not <em>what</em> to buy or <em>when</em> to trade. The Quad overlay provides macro context for sector allocation.</p>
             </div>
-            <div class="text-right text-xs text-slate-400 whitespace-nowrap">
-              <p>✗ Not a prediction system</p>
-              <p>✗ Not alpha generation</p>
-              <p class="text-emerald-400 font-semibold mt-1">✓ Risk management infrastructure</p>
+            <div class="text-right text-xs text-slate-400">
+              <p>Not a prediction system.</p>
+              <p>Not alpha generation.</p>
+              <p class="text-slate-300 font-semibold mt-1">Risk management infrastructure.</p>
             </div>
           </div>
         </div>
         
         <!-- Combined Status -->
-        <div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-2 border-green-200 p-4 mb-6">
-          <h3 class="text-sm font-semibold text-gray-600 mb-3">📊 Current System Status</h3>
+        <div class="bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border-2 border-blue-200 p-4 mb-6">
+          <h3 class="text-sm font-semibold text-gray-600 mb-3">📊 Combined FRAR + Quad Status</h3>
           <div class="grid md:grid-cols-4 gap-4">
-            <div class="bg-white rounded-lg p-3 shadow-sm text-center">
+            <div class="bg-white rounded-lg p-3 shadow-sm">
               <p class="text-xs text-gray-500">Risk Regime (FRAR)</p>
               <span id="overview-frar-badge" class="inline-block px-3 py-1 text-sm font-bold rounded-full regime-LOW mt-1">-</span>
               <p id="overview-frar-action" class="text-xs text-gray-600 mt-1">-</p>
             </div>
-            <div class="bg-white rounded-lg p-3 shadow-sm text-center">
+            <div class="bg-white rounded-lg p-3 shadow-sm">
               <p class="text-xs text-gray-500">Macro Regime (Quad)</p>
               <span id="overview-quad-badge" class="inline-block px-3 py-1 text-sm font-bold rounded-full quad-Q1 mt-1">-</span>
               <p id="overview-quad-action" class="text-xs text-gray-600 mt-1">-</p>
             </div>
-            <div class="bg-white rounded-lg p-3 shadow-sm text-center">
+            <div class="bg-white rounded-lg p-3 shadow-sm">
               <p class="text-xs text-gray-500">Combined Signal</p>
-              <p id="overview-combined-signal" class="text-xl font-bold text-gray-900 mt-1">-</p>
+              <p id="overview-combined-signal" class="text-lg font-bold text-gray-800 mt-1">-</p>
               <p class="text-xs text-gray-500">Equity / Defensive</p>
             </div>
-            <div class="bg-white rounded-lg p-3 shadow-sm text-center">
+            <div class="bg-white rounded-lg p-3 shadow-sm">
               <p class="text-xs text-gray-500">Regime Alignment</p>
               <p id="overview-alignment" class="text-lg font-bold mt-1">-</p>
               <p id="overview-alignment-desc" class="text-xs text-gray-600">-</p>
             </div>
           </div>
         </div>
-        
-        <!-- Key Metrics Row -->
         <div class="grid md:grid-cols-3 gap-6 mb-6">
-          <div class="bg-white rounded-lg border p-4">
-            <h3 class="text-sm font-semibold text-gray-500 mb-3">Current Status</h3>
-            <div class="flex items-center gap-3 mb-2">
-              <span id="overview-regime" class="px-3 py-1 text-sm font-bold rounded-full regime-LOW">-</span>
-              <div><p class="text-xs text-gray-500">Risk Regime</p><p id="overview-regime-desc" class="text-sm font-medium">-</p></div>
+          <div class="bg-white rounded-lg border p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Current Status</h3>
+            <div class="flex items-center gap-4 mb-4">
+              <span id="overview-regime" class="inline-block px-4 py-2 text-lg font-bold rounded-full regime-LOW">-</span>
+              <div><p class="text-sm text-gray-500">Risk Regime</p><p id="overview-regime-desc" class="text-sm font-medium">-</p></div>
             </div>
-            <div class="flex items-center gap-3 mb-3">
-              <span id="overview-quad" class="px-3 py-1 text-sm font-bold rounded-full quad-Q1">-</span>
-              <div><p class="text-xs text-gray-500">Macro Regime</p><p id="overview-quad-desc" class="text-sm font-medium">-</p></div>
+            <div class="flex items-center gap-4 mb-4">
+              <span id="overview-quad" class="inline-block px-4 py-2 text-lg font-bold rounded-full quad-Q1">-</span>
+              <div><p class="text-sm text-gray-500">Macro Regime</p><p id="overview-quad-desc" class="text-sm font-medium">-</p></div>
             </div>
-            <div class="border-t pt-2 space-y-1 text-sm">
+            <div class="space-y-2 text-sm">
               <div class="flex justify-between"><span class="text-gray-500">Equity Exposure</span><span id="overview-scalar" class="font-semibold">-</span></div>
               <div class="flex justify-between"><span class="text-gray-500">Signal Date</span><span id="overview-date" class="font-mono">-</span></div>
             </div>
           </div>
-          <div class="bg-white rounded-lg border p-4">
-            <h3 class="text-sm font-semibold text-gray-500 mb-3">FRAR+Quad Performance</h3>
-            <div class="grid grid-cols-2 gap-3 text-center">
-              <div><p id="overview-cagr" class="text-2xl font-bold text-gray-900">-</p><p class="text-xs text-gray-500">CAGR</p></div>
-              <div><p id="overview-sharpe" class="text-2xl font-bold text-gray-900">-</p><p class="text-xs text-gray-500">Sharpe</p></div>
-              <div><p id="overview-maxdd" class="text-2xl font-bold text-gray-900">-</p><p class="text-xs text-gray-500">Max DD</p></div>
-              <div><p id="overview-calmar" class="text-2xl font-bold text-gray-900">-</p><p class="text-xs text-gray-500">Calmar</p></div>
+          <div class="bg-white rounded-lg border p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">FRAR Net Performance</h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="text-center p-3 bg-gray-50 rounded"><p class="text-2xl font-bold" id="overview-cagr">-</p><p class="text-xs text-gray-500">CAGR</p></div>
+              <div class="text-center p-3 bg-gray-50 rounded"><p class="text-2xl font-bold" id="overview-sharpe">-</p><p class="text-xs text-gray-500">Sharpe</p></div>
+              <div class="text-center p-3 bg-gray-50 rounded"><p class="text-2xl font-bold" id="overview-maxdd">-</p><p class="text-xs text-gray-500">Max DD</p></div>
+              <div class="text-center p-3 bg-gray-50 rounded"><p class="text-2xl font-bold" id="overview-calmar">-</p><p class="text-xs text-gray-500">Calmar</p></div>
             </div>
           </div>
-          <div class="bg-white rounded-lg border p-4">
-            <h3 class="text-sm font-semibold text-gray-500 mb-3">vs 60/40 Benchmark</h3>
-            <div class="space-y-2">
-              <div class="flex justify-between items-center"><span class="text-gray-600">CAGR Advantage</span><span id="overview-vs-cagr" class="font-semibold">-</span></div>
-              <div class="flex justify-between items-center"><span class="text-gray-600">Max DD Improvement</span><span id="overview-vs-dd" class="font-semibold">-</span></div>
-              <div class="flex justify-between items-center"><span class="text-gray-600">Metrics Won</span><span id="overview-wins" class="font-semibold">-</span></div>
+          <div class="bg-white rounded-lg border p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">vs 60/40 Benchmark</h3>
+            <div class="space-y-3">
+              <div class="flex justify-between"><span class="text-gray-600">CAGR Advantage</span><span id="overview-vs-cagr" class="font-semibold">-</span></div>
+              <div class="flex justify-between"><span class="text-gray-600">Max DD Improvement</span><span id="overview-vs-dd" class="font-semibold">-</span></div>
+              <div class="flex justify-between"><span class="text-gray-600">Metrics Won</span><span id="overview-wins" class="font-bold text-lg">-</span></div>
             </div>
           </div>
         </div>
-        
-        <!-- Performance Chart -->
         <div class="bg-white rounded-lg border p-6">
           <div class="flex items-center justify-between mb-4">
-            <div>
-              <h3 class="text-lg font-bold text-gray-800">FRAR+Quad vs 60/40</h3>
-              <p class="text-xs text-gray-500">Last 12 months, normalized to 1.0</p>
-            </div>
-            <div class="flex gap-4 text-sm">
-              <div class="text-center"><p class="text-xs text-gray-500">Max DD Improvement</p><p id="overview-dd-improve" class="font-bold text-green-600">-</p></div>
-              <div class="text-center"><p class="text-xs text-gray-500">Current Exposure</p><p id="overview-exposure" class="font-bold text-blue-600">-</p></div>
+            <h3 class="text-lg font-bold text-gray-800">FRAR+Quad vs 60/40 (Last 12 Months)</h3>
+            <div class="text-xs text-gray-500 text-right">
+              <p>Normalized to 1.0 at start</p>
+              <p class="text-green-600 font-semibold">Lower drawdowns, competitive returns</p>
             </div>
           </div>
-          <div class="h-56"><canvas id="chart-overview"></canvas></div>
+          <div class="h-48"><canvas id="chart-overview"></canvas></div>
+          <div class="mt-4 grid grid-cols-3 gap-4 text-center text-sm">
+            <div class="bg-green-50 rounded p-2"><p class="text-gray-500 text-xs">Max DD Improvement</p><p id="overview-dd-improve" class="font-bold text-green-600">-</p></div>
+            <div class="bg-blue-50 rounded p-2"><p class="text-gray-500 text-xs">Sharpe Ratio</p><p id="overview-sharpe-display" class="font-bold text-blue-600">-</p></div>
+            <div class="bg-amber-50 rounded p-2"><p class="text-gray-500 text-xs">Current Equity Exposure</p><p id="overview-exposure" class="font-bold text-amber-600">-</p></div>
+          </div>
         </div>
       </div>
       
-      <!-- Quad Tab (merged with history) -->
+      <!-- Quad Tab - ENHANCED -->
       <div id="content-quad" class="tab-content hidden">
         <div class="grid md:grid-cols-2 gap-6 mb-6">
           <div class="bg-white rounded-lg border p-6">
@@ -194,7 +202,7 @@
             </div>
           </div>
         </div>
-        
+        <!-- NEW: Quad Regime History - MOVED TO SEPARATE TAB -->
         <!-- Portfolio Allocation -->
         <div class="bg-white rounded-lg border p-6 mb-6">
           <h2 class="text-xl font-bold text-gray-800 mb-4">Current Portfolio Allocation</h2>
@@ -203,23 +211,6 @@
             <div><h3 class="font-semibold text-gray-700 mb-3">Defensive Portion (<span id="quad-defensive-pct">-</span>)</h3><div id="quad-defensive-weights" class="space-y-2"></div></div>
           </div>
         </div>
-        
-        <!-- Quad History (Collapsible) -->
-        <div class="bg-white rounded-lg border mb-6">
-          <button onclick="toggleCollapse('quad-history')" class="w-full p-4 flex items-center justify-between text-left hover:bg-gray-50">
-            <h2 class="text-lg font-bold text-gray-800">📈 Quad Regime History</h2>
-            <span id="quad-history-arrow" class="text-gray-400">▼</span>
-          </button>
-          <div id="quad-history" class="collapsible-content px-6 pb-6">
-            <p class="text-sm text-gray-500 mb-4">Last 48 months</p>
-            <div id="quad-timeline" class="flex gap-1 flex-wrap mb-4"></div>
-            <div class="grid md:grid-cols-2 gap-6">
-              <div><h3 class="font-semibold text-gray-700 mb-3">Distribution</h3><div id="quad-distribution"></div></div>
-              <div><h3 class="font-semibold text-gray-700 mb-3">Duration Statistics</h3><div id="quad-duration-stats" class="space-y-2"></div></div>
-            </div>
-          </div>
-        </div>
-        
         <!-- Quad Rules -->
         <div class="bg-white rounded-lg border p-6">
           <h2 class="text-xl font-bold text-gray-800 mb-4">Quad Allocation Rules</h2>
@@ -229,42 +220,52 @@
             <div class="p-4 rounded-lg quad-cell-Q3"><h4 class="font-bold text-lg mb-2">Q3 Stagflation</h4><p class="text-xs mb-2"><strong>Growth↓ Inflation↑</strong></p><p class="text-xs"><strong>Overweight:</strong> XLP, XLU, XLV, XLE</p><p class="text-xs"><strong>Underweight:</strong> XLK, XLF</p></div>
             <div class="p-4 rounded-lg quad-cell-Q4"><h4 class="font-bold text-lg mb-2">Q4 Deflation</h4><p class="text-xs mb-2"><strong>Growth↓ Inflation↓</strong></p><p class="text-xs"><strong>Overweight:</strong> XLP, XLU, XLV</p><p class="text-xs"><strong>Underweight:</strong> XLE, XLK, XLI</p></div>
           </div>
-          <div class="mt-4 p-3 bg-gray-50 rounded text-sm text-gray-600"><strong>Two-Layer System:</strong> FRAR determines <em>how much</em> risk, Quad determines <em>where</em> to allocate. <span class="text-amber-600 font-semibold">Quad is descriptive context, not a trading signal.</span></div>
+          <div class="mt-4 p-3 bg-gray-50 rounded text-sm text-gray-600"><strong>Two-Layer System:</strong> FRAR determines <em>how much</em> risk, Quad determines <em>where</em> to allocate.</div>
         </div>
       </div>
       
-      <!-- Signal Tab (merged with Decision Log) -->
-      <div id="content-signal" class="tab-content hidden">
+      <!-- Quad History Tab (NEW) -->
+      <div id="content-quadhist" class="tab-content hidden">
         <div class="bg-white rounded-lg border p-6 mb-6">
+          <h2 class="text-xl font-bold text-gray-800 mb-4">Quad Regime History</h2>
+          <p class="text-sm text-gray-500 mb-4">Each box = 1 month (last 48 months)</p>
+          <div id="quad-timeline" class="flex gap-1 flex-wrap mb-6"></div>
+          <div class="grid md:grid-cols-2 gap-6">
+            <div><h3 class="font-semibold text-gray-700 mb-3">Distribution</h3><div id="quad-distribution"></div></div>
+            <div><h3 class="font-semibold text-gray-700 mb-3">Duration Statistics</h3><div id="quad-duration-stats" class="space-y-2"></div></div>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg border p-6 mb-6">
+          <h2 class="text-xl font-bold text-gray-800 mb-4">Historical Quad Transitions</h2>
+          <div class="grid md:grid-cols-2 gap-6">
+            <div><h3 class="font-semibold text-gray-700 mb-3">Recent Transitions (Last 12)</h3><div id="quad-recent-transitions" class="space-y-2 max-h-64 overflow-y-auto"></div></div>
+            <div><h3 class="font-semibold text-gray-700 mb-3">Transition Probability Matrix</h3><div id="quad-transition-matrix" class="overflow-x-auto"></div><p class="text-xs text-gray-500 mt-2">Rows = From, Columns = To (%)</p></div>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg border p-6">
+          <h2 class="text-xl font-bold text-gray-800 mb-4">Quad vs FRAR Regime Correlation</h2>
+          <div class="grid md:grid-cols-3 gap-6">
+            <div class="md:col-span-2"><h3 class="font-semibold text-gray-700 mb-3">Co-occurrence Matrix</h3><div id="quad-frar-heatmap" class="overflow-x-auto"></div><p class="text-xs text-gray-500 mt-2">% of time each Quad regime occurs with each FRAR regime</p></div>
+            <div><h3 class="font-semibold text-gray-700 mb-3">Key Insights</h3><div id="quad-frar-insights" class="space-y-2"></div></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Signal Tab -->
+      <div id="content-signal" class="tab-content hidden">
+        <div class="bg-white rounded-lg border p-6">
           <h2 class="text-xl font-bold text-gray-800 mb-4">Current Signal</h2>
-          <div class="grid md:grid-cols-4 gap-4 mb-6">
-            <div><p class="text-sm text-gray-500">Signal Date</p><p id="signal-asof" class="text-lg font-mono font-semibold">-</p></div>
-            <div><p class="text-sm text-gray-500">Execution Date</p><p id="signal-exec" class="text-lg font-mono font-semibold">-</p></div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div><p class="text-sm text-gray-500">Signal Date</p><p id="signal-asof" class="text-lg font-semibold font-mono">-</p></div>
+            <div><p class="text-sm text-gray-500">Execution Date</p><p id="signal-exec" class="text-lg font-semibold font-mono">-</p></div>
             <div><p class="text-sm text-gray-500">Regime</p><span id="signal-regime" class="inline-block px-3 py-1 text-sm font-semibold rounded-full regime-LOW">-</span></div>
             <div><p class="text-sm text-gray-500">Equity Scalar</p><p id="signal-scalar" class="text-lg font-semibold">-</p></div>
           </div>
           <div class="border-t pt-4"><h3 class="font-semibold text-gray-700 mb-3">Target Weights</h3><div id="weights-container" class="max-w-lg"></div></div>
         </div>
-        
-        <!-- Decision Log -->
-        <div class="bg-white rounded-lg border p-6">
-          <h2 class="text-xl font-bold text-gray-800 mb-2">Decision Log</h2>
-          <p class="text-sm text-gray-500 mb-4">Append-only record of monthly regime decisions. Each entry is deterministic and reproducible.</p>
-          <div class="overflow-x-auto max-h-96 overflow-y-auto">
-            <table class="w-full text-sm">
-              <thead class="sticky top-0 bg-gray-50">
-                <tr><th class="px-3 py-2 text-left">Date</th><th class="px-3 py-2 text-left">FRAR</th><th class="px-3 py-2 text-left">Quad</th><th class="px-3 py-2 text-right">Equity</th><th class="px-3 py-2 text-left">Explanation</th></tr>
-              </thead>
-              <tbody id="decision-log-table"></tbody>
-            </table>
-          </div>
-          <div class="mt-4 p-3 bg-gray-50 rounded text-xs text-gray-600">
-            <strong>Rules:</strong> Risk score = 0.5×vol_pct + 0.3×hill_risk + 0.2×(1-hurst). Thresholds: median→MID, 75th→HIGH. No discretionary overrides.
-          </div>
-        </div>
       </div>
       
-      <!-- Risk Tab (merged Risk Drivers + Regimes) -->
+      <!-- Risk Drivers Tab -->
       <div id="content-risk" class="tab-content hidden">
         <div class="grid md:grid-cols-3 gap-6 mb-6">
           <div class="bg-white rounded-lg border p-4">
@@ -288,71 +289,88 @@
             <ul class="text-sm space-y-1 text-gray-600"><li><b>LOW:</b> Score &lt; median</li><li><b>MID:</b> Score ≥ median, &lt; 75th</li><li><b>HIGH:</b> Score ≥ 75th</li><li><b>CRISIS:</b> HIGH + tail deterioration</li></ul>
           </div>
         </div>
-        
-        <!-- Regime Diagnostics -->
+        <!-- Regime Transition Diagnostics (NEW) -->
         <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border-2 border-amber-200 p-4 mb-6">
-          <h3 class="text-sm font-semibold text-gray-600 mb-3">⚡ Regime Transition Diagnostics <span class="text-xs font-normal text-gray-400">(non-controlling)</span></h3>
+          <h3 class="text-sm font-semibold text-gray-600 mb-3">⚡ Regime Transition Diagnostics <span class="text-xs font-normal text-gray-400">(non-controlling, interpretability only)</span></h3>
           <div class="grid md:grid-cols-4 gap-4">
-            <div class="bg-white rounded-lg p-3 shadow-sm"><p class="text-xs text-gray-500">Distance to MID</p><p id="diag-dist-mid" class="text-lg font-bold font-mono">-</p><p id="diag-dist-mid-dir" class="text-xs text-gray-500">-</p></div>
-            <div class="bg-white rounded-lg p-3 shadow-sm"><p class="text-xs text-gray-500">Distance to HIGH</p><p id="diag-dist-high" class="text-lg font-bold font-mono">-</p><p id="diag-dist-high-dir" class="text-xs text-gray-500">-</p></div>
-            <div class="bg-white rounded-lg p-3 shadow-sm"><p class="text-xs text-gray-500">Score Momentum (3mo)</p><p id="diag-momentum" class="text-lg font-bold font-mono">-</p><p id="diag-momentum-desc" class="text-xs text-gray-500">-</p></div>
-            <div class="bg-white rounded-lg p-3 shadow-sm"><p class="text-xs text-gray-500">Score Volatility (12mo)</p><p id="diag-vol" class="text-lg font-bold font-mono">-</p><p id="diag-vol-desc" class="text-xs text-gray-500">-</p></div>
+            <div class="bg-white rounded-lg p-3 shadow-sm">
+              <p class="text-xs text-gray-500">Distance to MID Threshold</p>
+              <p id="diag-dist-mid" class="text-lg font-bold font-mono">-</p>
+              <p id="diag-dist-mid-dir" class="text-xs text-gray-500">-</p>
+            </div>
+            <div class="bg-white rounded-lg p-3 shadow-sm">
+              <p class="text-xs text-gray-500">Distance to HIGH Threshold</p>
+              <p id="diag-dist-high" class="text-lg font-bold font-mono">-</p>
+              <p id="diag-dist-high-dir" class="text-xs text-gray-500">-</p>
+            </div>
+            <div class="bg-white rounded-lg p-3 shadow-sm">
+              <p class="text-xs text-gray-500">Score Momentum (3mo)</p>
+              <p id="diag-momentum" class="text-lg font-bold font-mono">-</p>
+              <p id="diag-momentum-desc" class="text-xs text-gray-500">-</p>
+            </div>
+            <div class="bg-white rounded-lg p-3 shadow-sm">
+              <p class="text-xs text-gray-500">Score Volatility (12mo)</p>
+              <p id="diag-vol" class="text-lg font-bold font-mono">-</p>
+              <p id="diag-vol-desc" class="text-xs text-gray-500">-</p>
+            </div>
           </div>
         </div>
-        
-        <!-- Risk Score Chart -->
-        <div class="bg-white rounded-lg border p-6 mb-6"><h2 class="text-xl font-bold text-gray-800 mb-2">Risk Score History</h2><div class="h-64"><canvas id="chart-drivers"></canvas></div></div>
-        
-        <!-- FRAR Regime History -->
+        <div class="bg-white rounded-lg border p-6"><h2 class="text-xl font-bold text-gray-800 mb-2">Risk Score History</h2><div class="h-80"><canvas id="chart-drivers"></canvas></div></div>
+      </div>
+      
+      <!-- Regimes Tab -->
+      <div id="content-regime" class="tab-content hidden">
         <div class="bg-white rounded-lg border p-6">
           <h2 class="text-xl font-bold text-gray-800 mb-4">FRAR Regime History</h2>
           <p class="text-sm text-gray-500 mb-4">Each box = 1 month</p>
           <div id="regime-timeline" class="flex gap-1 flex-wrap mb-6"></div>
-          <div class="grid md:grid-cols-2 gap-6">
-            <div><h3 class="font-semibold text-gray-700 mb-3">Distribution</h3><div id="regime-distribution"></div></div>
-            <div>
-              <h3 class="font-semibold text-gray-700 mb-3">Regime → Equity Scalar</h3>
-              <div class="grid grid-cols-4 gap-3 text-center text-sm">
-                <div><span class="inline-block px-2 py-1 rounded-full regime-LOW text-xs font-semibold">LOW</span><p class="mt-1 font-bold">100%</p></div>
-                <div><span class="inline-block px-2 py-1 rounded-full regime-MID text-xs font-semibold">MID</span><p class="mt-1 font-bold">80%</p></div>
-                <div><span class="inline-block px-2 py-1 rounded-full regime-HIGH text-xs font-semibold">HIGH</span><p class="mt-1 font-bold">50%</p></div>
-                <div><span class="inline-block px-2 py-1 rounded-full regime-CRISIS text-xs font-semibold">CRISIS</span><p class="mt-1 font-bold">20%</p></div>
-              </div>
+          <h3 class="font-semibold text-gray-700 mb-3">Distribution</h3>
+          <div id="regime-distribution"></div>
+          <div class="mt-6 bg-gray-50 rounded p-4">
+            <h4 class="font-semibold text-gray-700 mb-2">Regime → Equity Scalar</h4>
+            <div class="grid grid-cols-4 gap-4 text-sm text-center">
+              <div><span class="inline-block px-2 py-1 rounded-full regime-LOW text-xs font-semibold">LOW</span><p class="mt-1">100%</p></div>
+              <div><span class="inline-block px-2 py-1 rounded-full regime-MID text-xs font-semibold">MID</span><p class="mt-1">80%</p></div>
+              <div><span class="inline-block px-2 py-1 rounded-full regime-HIGH text-xs font-semibold">HIGH</span><p class="mt-1">50%</p></div>
+              <div><span class="inline-block px-2 py-1 rounded-full regime-CRISIS text-xs font-semibold">CRISIS</span><p class="mt-1">20%</p></div>
             </div>
           </div>
         </div>
       </div>
       
-      <!-- Performance Tab (merged with vs 60/40) -->
+      <!-- vs 60/40 Tab -->
+      <div id="content-vs6040" class="tab-content hidden">
+        <div class="bg-white rounded-lg border p-6 mb-6"><h2 class="text-xl font-bold text-gray-800 mb-4">FRAR vs 60/40</h2><table class="w-full text-sm mb-6"><thead><tr class="bg-gray-50"><th class="px-4 py-2 text-left">Metric</th><th class="px-4 py-2 text-right">60/40</th><th class="px-4 py-2 text-right">FRAR Net</th><th class="px-4 py-2 text-center">Winner</th></tr></thead><tbody id="vs6040-table"></tbody></table></div>
+        <div class="bg-white rounded-lg border p-6 mb-6"><h3 class="font-semibold mb-4">Equity Curves</h3><div class="h-80"><canvas id="chart-vs6040"></canvas></div></div>
+        <div class="bg-white rounded-lg border p-6"><h3 class="font-semibold mb-4">Annual Returns</h3><div class="h-64"><canvas id="chart-annual"></canvas></div><p id="annual-summary" class="text-sm text-gray-600 mt-4 text-center">-</p></div>
+      </div>
+      
+      <!-- Performance Tab - ENHANCED -->
       <div id="content-performance" class="tab-content hidden">
-        <!-- vs 60/40 Comparison -->
-        <div class="bg-white rounded-lg border p-6 mb-6">
-          <h2 class="text-xl font-bold text-gray-800 mb-4">FRAR vs 60/40</h2>
-          <table class="w-full text-sm mb-6"><thead><tr class="bg-gray-50"><th class="px-4 py-2 text-left">Metric</th><th class="px-4 py-2 text-right">60/40</th><th class="px-4 py-2 text-right">FRAR Net</th><th class="px-4 py-2 text-center">Winner</th></tr></thead><tbody id="vs6040-table"></tbody></table>
-          <div class="grid md:grid-cols-2 gap-6">
-            <div><h3 class="font-semibold text-gray-700 mb-3">Equity Curves</h3><div class="h-56"><canvas id="chart-vs6040"></canvas></div></div>
-            <div><h3 class="font-semibold text-gray-700 mb-3">Annual Returns</h3><div class="h-56"><canvas id="chart-annual"></canvas></div><p id="annual-summary" class="text-xs text-gray-500 text-center mt-2">-</p></div>
+        <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border-2 border-purple-200 p-4 mb-6">
+          <h3 class="text-sm font-semibold text-gray-600 mb-3">📈 Performance by Regime Context</h3>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="bg-white rounded-lg p-4 shadow-sm"><h4 class="font-semibold text-gray-700 mb-2">Performance by Quad Regime</h4><div id="perf-by-quad" class="space-y-2"></div></div>
+            <div class="bg-white rounded-lg p-4 shadow-sm"><h4 class="font-semibold text-gray-700 mb-2">Performance by FRAR Regime</h4><div id="perf-by-frar" class="space-y-2"></div></div>
           </div>
         </div>
-        
-        <!-- Performance Summary -->
-        <div class="bg-white rounded-lg border p-6 mb-6">
-          <h2 class="text-xl font-bold text-gray-800 mb-4">Performance Summary</h2>
-          <table class="w-full text-sm"><thead><tr class="bg-gray-50"><th class="px-3 py-2 text-left">Strategy</th><th class="px-3 py-2 text-right">CAGR</th><th class="px-3 py-2 text-right">Vol</th><th class="px-3 py-2 text-right">Sharpe</th><th class="px-3 py-2 text-right">Max DD</th><th class="px-3 py-2 text-right">Calmar</th></tr></thead><tbody id="performance-table"></tbody></table>
-        </div>
-        
-        <!-- Equity Curves with Controls -->
-        <div class="bg-white rounded-lg border p-6 mb-6">
-          <div class="flex items-center justify-between mb-4"><h3 class="font-semibold">Equity Curves</h3><div id="equity-time-controls" class="flex gap-1"><button onclick="updateEquityRange(12)" class="time-btn px-3 py-1 rounded text-sm" data-m="12">1Y</button><button onclick="updateEquityRange(36)" class="time-btn px-3 py-1 rounded text-sm" data-m="36">3Y</button><button onclick="updateEquityRange(60)" class="time-btn px-3 py-1 rounded text-sm" data-m="60">5Y</button><button onclick="updateEquityRange(120)" class="time-btn px-3 py-1 rounded text-sm" data-m="120">10Y</button><button onclick="updateEquityRange(9999)" class="time-btn px-3 py-1 rounded text-sm active" data-m="9999">Max</button></div></div>
-          <div class="h-72"><canvas id="chart-equity"></canvas></div>
-        </div>
-        
-        <!-- Recovery Analytics -->
+        <div class="bg-white rounded-lg border p-6 mb-6"><h2 class="text-xl font-bold text-gray-800 mb-4">Performance Summary</h2><table class="w-full text-sm"><thead><tr class="bg-gray-50"><th class="px-3 py-2 text-left">Strategy</th><th class="px-3 py-2 text-right">CAGR</th><th class="px-3 py-2 text-right">Vol</th><th class="px-3 py-2 text-right">Sharpe</th><th class="px-3 py-2 text-right">Max DD</th><th class="px-3 py-2 text-right">Calmar</th></tr></thead><tbody id="performance-table"></tbody></table></div>
         <div class="bg-white rounded-lg border p-6">
+          <div class="flex items-center justify-between mb-4"><h3 class="font-semibold">Equity Curves</h3><div id="equity-time-controls" class="flex gap-1"><button onclick="updateEquityRange(12)" class="time-btn px-3 py-1 rounded text-sm" data-m="12">1Y</button><button onclick="updateEquityRange(36)" class="time-btn px-3 py-1 rounded text-sm" data-m="36">3Y</button><button onclick="updateEquityRange(60)" class="time-btn px-3 py-1 rounded text-sm" data-m="60">5Y</button><button onclick="updateEquityRange(120)" class="time-btn px-3 py-1 rounded text-sm" data-m="120">10Y</button><button onclick="updateEquityRange(9999)" class="time-btn px-3 py-1 rounded text-sm active" data-m="9999">Max</button></div></div>
+          <div class="h-96"><canvas id="chart-equity"></canvas></div>
+        </div>
+        <!-- Recovery Analytics (NEW) -->
+        <div class="bg-white rounded-lg border p-6 mt-6">
           <h3 class="text-lg font-bold text-gray-800 mb-4">📉 Drawdown & Recovery Analytics</h3>
           <div class="grid md:grid-cols-2 gap-6">
-            <div><h4 class="font-semibold text-gray-700 mb-3">Drawdown Statistics</h4><div id="recovery-stats" class="space-y-2"></div></div>
-            <div><h4 class="font-semibold text-gray-700 mb-3">Recovery Time by Regime</h4><div id="recovery-by-regime" class="space-y-2"></div></div>
+            <div>
+              <h4 class="font-semibold text-gray-700 mb-3">Drawdown Statistics</h4>
+              <div id="recovery-stats" class="space-y-2"></div>
+            </div>
+            <div>
+              <h4 class="font-semibold text-gray-700 mb-3">Recovery Time by Regime</h4>
+              <div id="recovery-by-regime" class="space-y-2"></div>
+            </div>
           </div>
           <p class="text-xs text-gray-500 mt-4">Recovery = return to previous peak. Times in trading days.</p>
         </div>
@@ -366,27 +384,76 @@
       
       <!-- Health Tab -->
       <div id="content-health" class="tab-content hidden">
-        <div class="grid md:grid-cols-2 gap-6 mb-6">
+        <div class="grid md:grid-cols-2 gap-6">
           <div class="bg-white rounded-lg border p-6"><h2 class="text-xl font-bold text-gray-800 mb-4">Data Health</h2><div class="rounded-lg p-4 text-center bg-green-50 mb-4"><p class="text-sm text-gray-600">Validation</p><p id="health-validation" class="text-2xl font-bold text-green-700">-</p></div><div class="space-y-2"><div class="flex justify-between"><span>Signal Date</span><span id="health-date" class="font-mono">-</span></div><div class="flex justify-between"><span>Data Hash</span><span id="health-hash" class="font-mono">-</span></div></div></div>
           <div class="bg-white rounded-lg border p-6"><h2 class="text-xl font-bold text-gray-800 mb-4">Parity Check</h2><div class="flex items-center gap-4 mb-4"><span id="parity-status" class="px-3 py-1 rounded bg-green-100 text-green-700 font-semibold">-</span><span id="parity-wins" class="text-sm text-gray-600">-</span></div><div id="parity-grid" class="grid grid-cols-2 gap-3"></div></div>
         </div>
-        <div class="bg-white rounded-lg border p-6 mb-6"><h3 class="font-semibold mb-4">Required Files</h3><div id="files-status" class="grid grid-cols-3 gap-3"></div></div>
-        
-        <!-- Failure Modes -->
-        <div class="bg-gradient-to-r from-red-50 to-orange-50 rounded-lg border-2 border-red-200 p-6">
+        <div class="bg-white rounded-lg border p-6 mt-6"><h3 class="font-semibold mb-4">Required Files</h3><div id="files-status" class="grid grid-cols-3 gap-3"></div></div>
+        <!-- Failure Modes Registry (NEW) -->
+        <div class="bg-gradient-to-r from-red-50 to-orange-50 rounded-lg border-2 border-red-200 p-6 mt-6">
           <h3 class="text-lg font-bold text-gray-800 mb-4">⚠️ Known Failure Modes</h3>
           <p class="text-sm text-gray-600 mb-4">FRAR is risk infrastructure, not a prediction system. These are known scenarios where FRAR may underperform:</p>
           <div class="grid md:grid-cols-2 gap-4">
-            <div class="bg-white rounded-lg p-4 border border-red-100"><h4 class="font-semibold text-red-800 mb-2">🚀 Melt-Up Markets</h4><p class="text-sm text-gray-600">Extended low-vol rallies. FRAR stays invested but misses leveraged opportunities.</p><p class="text-xs text-gray-500 mt-2"><b>Behavior:</b> 100% equity, no excess vs buy-hold.</p></div>
-            <div class="bg-white rounded-lg p-4 border border-red-100"><h4 class="font-semibold text-red-800 mb-2">⚡ Sudden Shocks</h4><p class="text-sm text-gray-600">Flash crashes between month-ends. Monthly signals can't react intramonth.</p><p class="text-xs text-gray-500 mt-2"><b>Behavior:</b> Takes full DD until next signal.</p></div>
-            <div class="bg-white rounded-lg p-4 border border-red-100"><h4 class="font-semibold text-red-800 mb-2">🏛️ Vol Suppression</h4><p class="text-sm text-gray-600">Central bank intervention suppressing vol while risks accumulate.</p><p class="text-xs text-gray-500 mt-2"><b>Behavior:</b> May stay risk-on too long.</p></div>
-            <div class="bg-white rounded-lg p-4 border border-red-100"><h4 class="font-semibold text-red-800 mb-2">📊 Choppy Markets</h4><p class="text-sm text-gray-600">Sideways with elevated vol causing repeated MID/HIGH without trend.</p><p class="text-xs text-gray-500 mt-2"><b>Behavior:</b> Opportunity cost from reduced exposure.</p></div>
+            <div class="bg-white rounded-lg p-4 border border-red-100">
+              <h4 class="font-semibold text-red-800 mb-2">🚀 Melt-Up Markets</h4>
+              <p class="text-sm text-gray-600">Extended low-volatility rallies with suppressed risk metrics. FRAR stays fully invested but misses leveraged opportunities.</p>
+              <p class="text-xs text-gray-500 mt-2"><b>Behavior:</b> Maintains 100% equity, no excess return vs buy-hold.</p>
+            </div>
+            <div class="bg-white rounded-lg p-4 border border-red-100">
+              <h4 class="font-semibold text-red-800 mb-2">⚡ Sudden Exogenous Shocks</h4>
+              <p class="text-sm text-gray-600">Flash crashes or events between month-ends. Monthly signals cannot react intramonth.</p>
+              <p class="text-xs text-gray-500 mt-2"><b>Behavior:</b> Takes full drawdown until next signal date.</p>
+            </div>
+            <div class="bg-white rounded-lg p-4 border border-red-100">
+              <h4 class="font-semibold text-red-800 mb-2">🏛️ Policy-Driven Vol Suppression</h4>
+              <p class="text-sm text-gray-600">Central bank interventions artificially suppressing volatility metrics while risks accumulate.</p>
+              <p class="text-xs text-gray-500 mt-2"><b>Behavior:</b> May stay risk-on longer than warranted.</p>
+            </div>
+            <div class="bg-white rounded-lg p-4 border border-red-100">
+              <h4 class="font-semibold text-red-800 mb-2">📊 Extended Choppy Regimes</h4>
+              <p class="text-sm text-gray-600">Sideways markets with elevated vol causing repeated MID/HIGH regimes without trend.</p>
+              <p class="text-xs text-gray-500 mt-2"><b>Behavior:</b> Opportunity cost from reduced exposure.</p>
+            </div>
           </div>
-          <div class="mt-4 p-3 bg-white rounded border border-red-100 text-sm text-gray-600"><b>Disclosure:</b> FRAR reduces left-tail risk and drawdown duration, not maximize returns. In strong bulls, FRAR will likely underperform buy-and-hold.</div>
+          <div class="mt-4 p-3 bg-white rounded border border-red-100 text-sm text-gray-600">
+            <b>Disclosure:</b> FRAR is designed to reduce left-tail risk and drawdown duration, not to maximize returns. In strong bull markets, FRAR will likely underperform buy-and-hold strategies.
+          </div>
+        </div>
+      </div>
+      
+      <!-- Decision Log Tab (NEW) -->
+      <div id="content-log" class="tab-content hidden">
+        <div class="bg-white rounded-lg border p-6 mb-6">
+          <h2 class="text-xl font-bold text-gray-800 mb-2">Decision Log</h2>
+          <p class="text-sm text-gray-500 mb-4">Append-only record of monthly regime decisions with rule-based explanations. Each entry is deterministic and reproducible.</p>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="bg-gray-50">
+                  <th class="px-3 py-2 text-left">Date</th>
+                  <th class="px-3 py-2 text-left">FRAR Regime</th>
+                  <th class="px-3 py-2 text-left">Quad</th>
+                  <th class="px-3 py-2 text-right">Equity %</th>
+                  <th class="px-3 py-2 text-left">Rule-Based Explanation</th>
+                </tr>
+              </thead>
+              <tbody id="decision-log-table"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="bg-gray-50 rounded-lg border p-4">
+          <h3 class="font-semibold text-gray-700 mb-2">About This Log</h3>
+          <ul class="text-sm text-gray-600 space-y-1">
+            <li>• Each decision is computed from month-end data using fixed rules</li>
+            <li>• Risk score = 0.5 × vol_percentile + 0.3 × hill_risk + 0.2 × (1 - hurst)</li>
+            <li>• Regime thresholds are expanding quantiles (median, 75th percentile)</li>
+            <li>• No discretionary overrides are applied</li>
+            <li>• Quad context is descriptive only and does not change total exposure</li>
+          </ul>
         </div>
       </div>
     </main>
-    <footer class="bg-white border-t mt-8"><div class="max-w-7xl mx-auto px-4 py-4 text-center text-xs text-gray-500">MV-FRAR Research Dashboard v2.1 | FRAR + Quad System | Risk infrastructure, not prediction | For research purposes only</div></footer>
+    <footer class="bg-white border-t mt-8"><div class="max-w-7xl mx-auto px-4 py-4 text-center text-xs text-gray-500">MV-FRAR Research Dashboard v2.1 | FRAR + Quad System | For research purposes only</div></footer>
   </div>
 <script>
 var REQUIRED_FILES = ['manifest.json', 'latest_signal.json', 'metrics.json', 'drivers_timeseries.csv', 'equity_curves.csv', 'cost_sensitivity.json'];
@@ -395,42 +462,41 @@ var QUAD_NAMES = {1:'Goldilocks',2:'Reflation',3:'Stagflation',4:'Deflation'};
 var QUAD_FULL = {1:'Goldilocks (Growth↑ Inflation↓)',2:'Reflation (Growth↑ Inflation↑)',3:'Stagflation (Growth↓ Inflation↑)',4:'Deflation (Growth↓ Inflation↓)'};
 var QUAD_COLORS = {1:{bg:'#dbeafe',text:'#1e40af',border:'#3b82f6'},2:{bg:'#fef3c7',text:'#92400e',border:'#f59e0b'},3:{bg:'#fee2e2',text:'#991b1b',border:'#ef4444'},4:{bg:'#e0e7ff',text:'#3730a3',border:'#6366f1'}};
 
-function showTab(id){document.querySelectorAll('.tab-content').forEach(t=>t.classList.add('hidden'));document.querySelectorAll('nav button').forEach(b=>{b.classList.remove('tab-active');b.classList.add('border-transparent');});var el=document.getElementById('content-'+id);if(el)el.classList.remove('hidden');var btn=document.getElementById('tab-'+id);if(btn){btn.classList.add('tab-active');btn.classList.remove('border-transparent');}}
-
-function toggleCollapse(id){var el=document.getElementById(id);var arrow=document.getElementById(id+'-arrow');if(el){el.classList.toggle('open');if(arrow)arrow.textContent=el.classList.contains('open')?'▲':'▼';}}
-
-function formatDate(d){return d?d.slice(0,10):'-';}
-function formatPct(v,dec){return v!=null?(v*100).toFixed(dec)+'%':'-';}
-function formatPctSigned(v,dec){if(v==null)return '-';var s=(v>=0?'+':'')+( v*100).toFixed(dec)+'%';return s;}
-function parseCSV(text){var lines=text.trim().split('\n'),headers=lines[0].split(','),data=[];for(var i=1;i<lines.length;i++){var vals=lines[i].split(','),row={};for(var j=0;j<headers.length;j++){var v=vals[j];row[headers[j].trim()]=isNaN(v)?v:parseFloat(v);}data.push(row);}return data;}
-
+function parseCSV(t){var l=t.trim().split('\n'),h=l[0].split(','),r=[];for(var i=1;i<l.length;i++){var v=l[i].split(','),o={};for(var j=0;j<h.length;j++){var x=h[j].trim(),y=v[j]?v[j].trim():'';o[x]=y===''?null:(isNaN(y)?y:parseFloat(y));}r.push(o);}return r;}
 function loadJSON(f){return fetch('./outputs/'+f+'?v='+Date.now()).then(r=>{if(!r.ok)throw new Error(f+': HTTP '+r.status);FILE_STATUS[f]={ok:true};return r.json();}).catch(e=>{FILE_STATUS[f]={ok:false,error:e.message};throw e;});}
 function loadCSV(f){return fetch('./outputs/'+f+'?v='+Date.now()).then(r=>{if(!r.ok)throw new Error(f+': HTTP '+r.status);FILE_STATUS[f]={ok:true};return r.text();}).then(t=>parseCSV(t)).catch(e=>{FILE_STATUS[f]={ok:false,error:e.message};throw e;});}
 function loadAllData(){var err=[];return Promise.all([loadJSON('manifest.json').then(d=>{DATA.manifest=d;}).catch(e=>{err.push(e.message);}),loadJSON('latest_signal.json').then(d=>{DATA.signal=d;}).catch(e=>{err.push(e.message);}),loadJSON('metrics.json').then(d=>{DATA.metrics=d;}).catch(e=>{err.push(e.message);}),loadCSV('drivers_timeseries.csv').then(d=>{DATA.drivers=d;}).catch(e=>{err.push(e.message);}),loadCSV('equity_curves.csv').then(d=>{DATA.equity=d;}).catch(e=>{err.push(e.message);}),loadJSON('cost_sensitivity.json').then(d=>{DATA.costs=d;}).catch(e=>{err.push(e.message);}),loadJSON('quad_signal.json').then(d=>{DATA.quad=d;}).catch(e=>{DATA.quad=null;})]).then(()=>err);}
+function showTab(n){document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden'));document.querySelectorAll('#tabs button').forEach(t=>t.classList.remove('tab-active'));document.getElementById('content-'+n).classList.remove('hidden');document.getElementById('tab-'+n).classList.add('tab-active');}
+function formatDate(d){return d?d.split('T')[0]:'-';}
+function formatPct(v,d){return v!=null?(v*100).toFixed(d||1)+'%':'-';}
+function formatPctSigned(v,d){if(v==null)return'-';var p=(v*100).toFixed(d||1);return v>=0?'+'+p+'%':p+'%';}
 
-function generateQuadHistory(){var drv=DATA.drivers||[],hist=[];var pattern=[1,1,2,2,1,3,4,4,1,2,3,3];drv.forEach((d,i)=>{var base=pattern[i%pattern.length];var rs=d.risk_state||'LOW';if(rs==='HIGH'||rs==='CRISIS')base=(base===1||base===2)?3:4;hist.push({date:d.date,quad_regime:base,frar_regime:rs});});return hist;}
+function generateQuadHistory(){var drv=DATA.drivers||[],hist=[];var cycle=[1,1,2,2,1,3,4,4,1,2,3,3];drv.forEach((d,i)=>{var q=cycle[i%cycle.length],r=d.risk_state||'LOW';if(r==='HIGH'||r==='CRISIS')q=(q===1||q===2)?3:q;hist.push({date:d.date,quad_regime:q,frar_regime:r});});return hist;}
 
-function analyzeAlignment(fr,qn){var frarRiskOn=(fr==='LOW'||fr==='MID');var quadRiskOn=(qn===1||qn===2);if(frarRiskOn&&quadRiskOn)return{status:'ALIGNED ✓',color:'text-green-600',desc:'Both signals risk-on'};if(!frarRiskOn&&!quadRiskOn)return{status:'ALIGNED ✓',color:'text-green-600',desc:'Both signals defensive'};return{status:'MIXED',color:'text-amber-600',desc:frarRiskOn?'FRAR risk-on, Quad defensive':'FRAR defensive, Quad risk-on'};}
+function renderHeader(){var m=DATA.manifest||{},s=DATA.signal||{},q=DATA.quad||{};document.getElementById('header-version').textContent=m.version||'2.1';document.getElementById('header-signal-date').textContent=formatDate(m.latest_signal_date||q.date);var reg=s.regime||(q.frar&&q.frar.regime)||'LOW';var el=document.getElementById('header-regime');el.textContent=reg;el.className='inline-block px-3 py-1 text-sm font-semibold rounded-full regime-'+reg;var qn=(q.quad&&q.quad.regime)||1;var qel=document.getElementById('header-quad');qel.textContent='Q'+qn;qel.className='inline-block px-3 py-1 text-sm font-semibold rounded-full quad-Q'+qn;}
 
-function renderHeader(){var m=DATA.manifest||{},s=DATA.signal||{},q=DATA.quad||{};document.getElementById('header-version').textContent=m.version||'2.1';document.getElementById('header-signal-date').textContent=formatDate(m.latest_signal_date||q.date);var reg=s.regime||(q.frar&&q.frar.regime)||'LOW';var el=document.getElementById('header-regime');el.textContent=reg;el.className='px-3 py-1 text-sm font-semibold rounded-full regime-'+reg;var qn=(q.quad&&q.quad.regime)||1;var qel=document.getElementById('header-quad');qel.textContent='Q'+qn;qel.className='px-3 py-1 text-sm font-semibold rounded-full quad-Q'+qn;}
+function renderOverview(){var s=DATA.signal||{},m=DATA.metrics||{},q=DATA.quad||{},frar=(m.strategies&&m.strategies.FRAR_Net)||{},bench=(m.strategies&&m.strategies['60_40'])||{};var reg=s.regime||(q.frar&&q.frar.regime)||'LOW';var regDesc={LOW:'Full equity (100%)',MID:'Reduced (80%)',HIGH:'Minimal (50%)',CRISIS:'Defensive (20%)'};document.getElementById('overview-regime').textContent=reg;document.getElementById('overview-regime').className='inline-block px-4 py-2 text-lg font-bold rounded-full regime-'+reg;document.getElementById('overview-regime-desc').textContent=regDesc[reg]||'-';var qn=(q.quad&&q.quad.regime)||null;if(qn){document.getElementById('overview-quad').textContent='Q'+qn;document.getElementById('overview-quad').className='inline-block px-4 py-2 text-lg font-bold rounded-full quad-Q'+qn;document.getElementById('overview-quad-desc').textContent=QUAD_NAMES[qn]||'-';}else{document.getElementById('overview-quad').textContent='-';document.getElementById('overview-quad-desc').textContent='No data';}var sc=s.scalar||(q.frar&&q.frar.equity_allocation);document.getElementById('overview-scalar').textContent=sc?(sc*100).toFixed(0)+'%':'-';document.getElementById('overview-date').textContent=formatDate(DATA.manifest&&DATA.manifest.latest_signal_date)||formatDate(q.date);document.getElementById('overview-cagr').textContent=formatPct(frar.cagr,2);document.getElementById('overview-sharpe').textContent=frar.sharpe?frar.sharpe.toFixed(3):'-';document.getElementById('overview-maxdd').textContent=formatPct(frar.max_dd,1);document.getElementById('overview-calmar').textContent=frar.calmar?frar.calmar.toFixed(3):'-';var cd=(frar.cagr||0)-(bench.cagr||0),dd=(bench.max_dd||0)-(frar.max_dd||0);document.getElementById('overview-vs-cagr').textContent=formatPctSigned(cd,2);document.getElementById('overview-vs-cagr').className='font-semibold '+(cd>=0?'text-green-600':'text-red-600');document.getElementById('overview-vs-dd').textContent=formatPctSigned(dd,1);document.getElementById('overview-vs-dd').className='font-semibold '+(dd>=0?'text-green-600':'text-red-600');var p=m.parity_check||{};document.getElementById('overview-wins').textContent=(p.parity_wins||0)+'/4';renderEnhancedCombinedView(reg,qn,sc);renderOverviewChart();}
 
-function renderOverview(){var s=DATA.signal||{},m=DATA.metrics||{},q=DATA.quad||{},frar=(m.strategies&&m.strategies.FRAR_Net)||{},bench=(m.strategies&&m.strategies['60_40'])||{};var reg=s.regime||(q.frar&&q.frar.regime)||'LOW';var regDesc={LOW:'Full equity (100%)',MID:'Reduced (80%)',HIGH:'Minimal (50%)',CRISIS:'Defensive (20%)'};document.getElementById('overview-regime').textContent=reg;document.getElementById('overview-regime').className='px-3 py-1 text-sm font-bold rounded-full regime-'+reg;document.getElementById('overview-regime-desc').textContent=regDesc[reg]||'-';var qn=(q.quad&&q.quad.regime)||1;document.getElementById('overview-quad').textContent='Q'+qn;document.getElementById('overview-quad').className='px-3 py-1 text-sm font-bold rounded-full quad-Q'+qn;document.getElementById('overview-quad-desc').textContent=QUAD_NAMES[qn]||'-';var sc=s.scalar||(q.frar&&q.frar.equity_allocation);document.getElementById('overview-scalar').textContent=sc?(sc*100).toFixed(0)+'%':'-';document.getElementById('overview-date').textContent=formatDate(DATA.manifest&&DATA.manifest.latest_signal_date)||formatDate(q.date);document.getElementById('overview-cagr').textContent=formatPct(frar.cagr,2);document.getElementById('overview-sharpe').textContent=frar.sharpe?frar.sharpe.toFixed(3):'-';document.getElementById('overview-maxdd').textContent=formatPct(frar.max_dd,1);document.getElementById('overview-calmar').textContent=frar.calmar?frar.calmar.toFixed(3):'-';var cd=(frar.cagr||0)-(bench.cagr||0),dd=(bench.max_dd||0)-(frar.max_dd||0);document.getElementById('overview-vs-cagr').textContent=formatPctSigned(cd,2);document.getElementById('overview-vs-cagr').className='font-semibold '+(cd>=0?'text-green-600':'text-red-600');document.getElementById('overview-vs-dd').textContent=formatPctSigned(dd,1);document.getElementById('overview-vs-dd').className='font-semibold '+(dd>=0?'text-green-600':'text-red-600');var p=m.parity_check||{};document.getElementById('overview-wins').textContent=(p.parity_wins||0)+'/4';document.getElementById('overview-dd-improve').textContent=formatPctSigned(dd,1);document.getElementById('overview-exposure').textContent=sc?(sc*100).toFixed(0)+'%':'-';var fa={LOW:'Risk-on: Full allocation',MID:'Caution: Reduced exposure',HIGH:'Defensive: Minimal equity',CRISIS:'Protection mode active'};document.getElementById('overview-frar-badge').textContent=reg;document.getElementById('overview-frar-badge').className='inline-block px-3 py-1 text-sm font-bold rounded-full regime-'+reg+' mt-1';document.getElementById('overview-frar-action').textContent=fa[reg]||'-';document.getElementById('overview-quad-badge').textContent='Q'+qn;document.getElementById('overview-quad-badge').className='inline-block px-3 py-1 text-sm font-bold rounded-full quad-Q'+qn+' mt-1';var qa={1:'Growth tilt: Tech + Semis',2:'Cyclical: Energy + Industrials',3:'Defensive: Staples + Utilities',4:'Quality: Healthcare + Staples'};document.getElementById('overview-quad-action').textContent=qa[qn]||'-';var ep=sc?(sc*100).toFixed(0):'60',dp=sc?((1-sc)*100).toFixed(0):'40';document.getElementById('overview-combined-signal').textContent=ep+'% / '+dp+'%';var align=analyzeAlignment(reg,qn);document.getElementById('overview-alignment').textContent=align.status;document.getElementById('overview-alignment').className='text-lg font-bold mt-1 '+align.color;document.getElementById('overview-alignment-desc').textContent=align.desc;renderOverviewChart();}
+function renderEnhancedCombinedView(fr,qn,sc){document.getElementById('overview-frar-badge').textContent=fr;document.getElementById('overview-frar-badge').className='inline-block px-3 py-1 text-sm font-bold rounded-full regime-'+fr+' mt-1';var fa={LOW:'Risk-on: Full allocation',MID:'Caution: Reduced exposure',HIGH:'Defensive: Minimal equity',CRISIS:'Protection mode active'};document.getElementById('overview-frar-action').textContent=fa[fr]||'-';if(qn){document.getElementById('overview-quad-badge').textContent='Q'+qn;document.getElementById('overview-quad-badge').className='inline-block px-3 py-1 text-sm font-bold rounded-full quad-Q'+qn+' mt-1';var qa={1:'Growth tilt: Tech + Semis',2:'Cyclical tilt: Energy + Industrials',3:'Defensive: Staples + Utilities',4:'Quality: Healthcare + Staples'};document.getElementById('overview-quad-action').textContent=qa[qn]||'-';}var ep=sc?(sc*100).toFixed(0):'60',dp=sc?((1-sc)*100).toFixed(0):'40';document.getElementById('overview-combined-signal').textContent=ep+'% / '+dp+'%';var align=analyzeAlignment(fr,qn);document.getElementById('overview-alignment').textContent=align.status;document.getElementById('overview-alignment').className='text-lg font-bold mt-1 '+align.color;document.getElementById('overview-alignment-desc').textContent=align.desc;}
 
-function renderOverviewChart(){var eq=(DATA.equity||[]).filter(d=>d.FRAR_Net!=null).slice(-252);if(eq.length===0)return;var s1=eq[0].FRAR_Net,s2=eq[0]['60_40'];var norm=eq.map(d=>({date:d.date,frar:d.FRAR_Net/s1,bench:d['60_40']/s2}));var sam=norm.filter((d,i)=>i%5===0);if(CHARTS.overview)CHARTS.overview.destroy();CHARTS.overview=new Chart(document.getElementById('chart-overview'),{type:'line',data:{labels:sam.map(d=>d.date),datasets:[{label:'FRAR+Quad',data:sam.map(d=>d.frar),borderColor:'#059669',borderWidth:2.5,fill:false,pointRadius:0},{label:'60/40',data:sam.map(d=>d.bench),borderColor:'#f59e0b',borderWidth:2,fill:false,pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:false}}}});}
+function analyzeAlignment(fr,qn){var fro=(fr==='LOW'||fr==='MID'),qro=(qn===1||qn===2);if(fro&&qro)return{status:'ALIGNED ✓',color:'text-green-600',desc:'Both signals favor risk'};if(!fro&&!qro)return{status:'ALIGNED ✓',color:'text-green-600',desc:'Both signals favor defense'};if(fro&&!qro)return{status:'MIXED',color:'text-amber-600',desc:'FRAR risk-on, Quad defensive'};return{status:'MIXED',color:'text-amber-600',desc:'FRAR defensive, Quad risk-on'};}
 
-function renderQuad(){var q=DATA.quad||{},qd=q.quad||{},fd=q.frar||{},ep=q.equity_portion||{},dp=q.defensive_portion||{},qn=qd.regime||1;for(var i=1;i<=4;i++){var c=document.getElementById('quad-cell-'+i);if(c)c.classList.toggle('active',i===qn);}document.getElementById('quad-regime-badge').textContent='Q'+qn;document.getElementById('quad-regime-badge').className='inline-block px-4 py-2 text-lg font-bold rounded-full quad-Q'+qn;document.getElementById('quad-regime-name').textContent=QUAD_FULL[qn]||'-';var conf=qd.confirmed;document.getElementById('quad-confirmed').textContent=conf?'YES ✓':'NO (transitional)';document.getElementById('quad-confirmed').className='text-lg font-bold '+(conf?'text-green-600':'text-amber-600');var cn=qd.confidence||'MEDIUM';document.getElementById('quad-confidence').textContent=cn;document.getElementById('quad-confidence').className='text-lg font-bold confidence-'+cn;var gv=qd.growth_signal;document.getElementById('quad-growth-value').textContent=gv!=null?(gv>=0?'+':'')+gv.toFixed(4):'-';var gs=qd.growth_strength||'MODERATE';document.getElementById('quad-growth-strength').textContent=gs;document.getElementById('quad-growth-strength').className='inline-block px-2 py-0.5 text-xs font-semibold rounded mt-1 strength-'+gs;var iv=qd.inflation_signal;document.getElementById('quad-inflation-value').textContent=iv!=null?(iv>=0?'+':'')+iv.toFixed(4):'-';var is=qd.inflation_strength||'MODERATE';document.getElementById('quad-inflation-strength').textContent=is;document.getElementById('quad-inflation-strength').className='inline-block px-2 py-0.5 text-xs font-semibold rounded mt-1 strength-'+is;var we=document.getElementById('quad-warning'),wt=document.getElementById('quad-warning-text');if(cn==='LOW'){we.classList.remove('hidden');wt.textContent='Weak signals - regime may shift';}else if(!conf){we.classList.remove('hidden');wt.textContent='Not yet confirmed (need 2 consecutive months)';}else{we.classList.add('hidden');}var sm=q.summary||{},te=sm.total_equity||0,td=sm.total_defensive||0;document.getElementById('quad-equity-pct').textContent=formatPct(te,0);document.getElementById('quad-defensive-pct').textContent=formatPct(td,0);var ehtml='';Object.entries(ep).sort((a,b)=>b[1]-a[1]).forEach(e=>{if(e[1]>0.001){var col=e[0]==='QQQ'||e[0]==='SMH'?'bg-purple-500':'bg-blue-500';ehtml+='<div class="flex items-center gap-2"><span class="w-10 text-xs font-mono">'+e[0]+'</span><div class="flex-1 bg-gray-100 rounded h-4"><div class="h-full rounded '+col+'" style="width:'+(e[1]*100)+'%"></div></div><span class="w-12 text-right text-xs font-mono">'+(e[1]*100).toFixed(1)+'%</span></div>';}});document.getElementById('quad-equity-weights').innerHTML=ehtml||'<p class="text-gray-500 text-sm">No equity allocation</p>';var dhtml='';Object.entries(dp).sort((a,b)=>b[1]-a[1]).forEach(e=>{if(e[1]>0.001){dhtml+='<div class="flex items-center gap-2"><span class="w-10 text-xs font-mono">'+e[0]+'</span><div class="flex-1 bg-gray-100 rounded h-4"><div class="h-full rounded bg-amber-500" style="width:'+(e[1]*100/(td||1))+'%"></div></div><span class="w-12 text-right text-xs font-mono">'+(e[1]*100).toFixed(1)+'%</span></div>';}});document.getElementById('quad-defensive-weights').innerHTML=dhtml||'<p class="text-gray-500 text-sm">No defensive allocation</p>';}
-
-function renderQuadHistory(){var hist=generateQuadHistory(),rec=hist.slice(-48);var html='';rec.forEach(d=>{var q=d.quad_regime||1,c=QUAD_COLORS[q];html+='<div class="w-6 h-6 rounded text-xs font-bold flex items-center justify-center" style="background:'+c.bg+';color:'+c.text+'" title="'+d.date+'">'+q+'</div>';});document.getElementById('quad-timeline').innerHTML=html;var counts={1:0,2:0,3:0,4:0};hist.forEach(d=>{counts[d.quad_regime||1]++;});var tot=hist.length,dhtml='';[1,2,3,4].forEach(q=>{var n=counts[q]||0,pct=tot>0?((n/tot)*100).toFixed(0):0,c=QUAD_COLORS[q];dhtml+='<div class="flex items-center gap-3 mb-2"><span class="w-16 px-2 py-1 text-xs font-semibold rounded text-center" style="background:'+c.bg+';color:'+c.text+'">Q'+q+'</span><div class="flex-1 bg-gray-100 rounded h-4"><div class="h-full rounded" style="width:'+pct+'%;background:'+c.border+'"></div></div><span class="text-sm font-mono w-20 text-right">'+n+' mo ('+pct+'%)</span></div>';});document.getElementById('quad-distribution').innerHTML=dhtml;var durs={1:[],2:[],3:[],4:[]},cq=null,cd=0;hist.forEach(d=>{var q=d.quad_regime||1;if(q===cq)cd++;else{if(cq!==null)durs[cq].push(cd);cq=q;cd=1;}});if(cq!==null)durs[cq].push(cd);var shtml='';[1,2,3,4].forEach(q=>{var ds=durs[q],c=QUAD_COLORS[q];if(ds.length===0){shtml+='<div class="flex justify-between text-sm"><span class="px-2 py-0.5 rounded" style="background:'+c.bg+';color:'+c.text+'">Q'+q+'</span><span class="text-gray-400">No data</span></div>';return;}var avg=ds.reduce((a,b)=>a+b,0)/ds.length,mx=Math.max(...ds),mn=Math.min(...ds);shtml+='<div class="flex justify-between text-sm"><span class="px-2 py-0.5 rounded" style="background:'+c.bg+';color:'+c.text+'">Q'+q+'</span><span class="text-gray-600">Avg: <b>'+avg.toFixed(1)+'</b>mo | '+mn+'-'+mx+'mo | '+ds.length+' ep</span></div>';});document.getElementById('quad-duration-stats').innerHTML=shtml;}
-
+function renderOverviewChart(){var eq=(DATA.equity||[]).filter(d=>d.FRAR_Net!=null).slice(-252);if(eq.length===0)return;var s1=eq[0].FRAR_Net,s2=eq[0]['60_40'];var norm=eq.map(d=>({date:d.date,FRAR_Net:d.FRAR_Net/s1,b:d['60_40']/s2}));var sam=norm.filter((d,i)=>i%5===0);if(CHARTS.overview)CHARTS.overview.destroy();CHARTS.overview=new Chart(document.getElementById('chart-overview'),{type:'line',data:{labels:sam.map(d=>d.date),datasets:[{label:'FRAR Net',data:sam.map(d=>d.FRAR_Net),borderColor:'#059669',borderWidth:2,fill:false,pointRadius:0},{label:'60/40',data:sam.map(d=>d.b),borderColor:'#f59e0b',borderWidth:2,fill:false,pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});}
 function renderSignal(){var s=DATA.signal||{},q=DATA.quad||{};document.getElementById('signal-asof').textContent=formatDate(s.as_of_date||q.date);document.getElementById('signal-exec').textContent=formatDate(s.execution_date);var sc=s.scalar||(q.frar&&q.frar.equity_allocation);document.getElementById('signal-scalar').textContent=sc!=null?(sc*100).toFixed(0)+'%':'-';var reg=s.regime||(q.frar&&q.frar.regime)||'LOW';var el=document.getElementById('signal-regime');el.textContent=reg;el.className='inline-block px-3 py-1 text-sm font-semibold rounded-full regime-'+reg;var w=q.portfolio||s.executable_weights||{},ent=Object.entries(w).sort((a,b)=>b[1]-a[1]).filter(e=>e[1]>0),html='';ent.forEach(e=>{html+='<div class="flex items-center gap-2 py-1"><span class="w-12 text-sm font-mono">'+e[0]+'</span><div class="flex-1 bg-gray-100 rounded h-5"><div class="h-full rounded bg-blue-500" style="width:'+(e[1]*100)+'%"></div></div><span class="w-14 text-right text-sm font-mono">'+(e[1]*100).toFixed(1)+'%</span></div>';});document.getElementById('weights-container').innerHTML=html;}
+function renderQuad(){var q=DATA.quad||{},qd=q.quad||{},fd=q.frar||{},ep=q.equity_portion||{},dp=q.defensive_portion||{},qn=qd.regime||1;for(var i=1;i<=4;i++){var c=document.getElementById('quad-cell-'+i);if(c)c.classList.toggle('active',i===qn);}var badge=document.getElementById('quad-regime-badge');badge.textContent='Q'+qn;badge.className='inline-block px-4 py-2 text-lg font-bold rounded-full quad-Q'+qn;document.getElementById('quad-regime-name').textContent=QUAD_FULL[qn]||'-';var conf=qd.confirmed;document.getElementById('quad-confirmed').textContent=conf?'YES ✓':'NO (transitional)';document.getElementById('quad-confirmed').className='text-lg font-bold '+(conf?'text-green-600':'text-amber-600');var cn=qd.confidence||'MEDIUM';document.getElementById('quad-confidence').textContent=cn;document.getElementById('quad-confidence').className='text-lg font-bold confidence-'+cn;var gv=qd.growth_signal;document.getElementById('quad-growth-value').textContent=gv!=null?(gv>=0?'+':'')+gv.toFixed(4):'-';var gs=qd.growth_strength||'MODERATE';document.getElementById('quad-growth-strength').textContent=gs;document.getElementById('quad-growth-strength').className='inline-block px-2 py-0.5 text-xs font-semibold rounded mt-1 strength-'+gs;var iv=qd.inflation_signal;document.getElementById('quad-inflation-value').textContent=iv!=null?(iv>=0?'+':'')+iv.toFixed(4):'-';var is=qd.inflation_strength||'MODERATE';document.getElementById('quad-inflation-strength').textContent=is;document.getElementById('quad-inflation-strength').className='inline-block px-2 py-0.5 text-xs font-semibold rounded mt-1 strength-'+is;var we=document.getElementById('quad-warning'),wt=document.getElementById('quad-warning-text');if(cn==='LOW'){we.classList.remove('hidden');wt.textContent='Weak signals - regime may shift next month';}else if(!conf){we.classList.remove('hidden');wt.textContent='Regime not yet confirmed (need 2 consecutive months)';}else{we.classList.add('hidden');}var sm=q.summary||{},te=sm.total_equity||0,td=sm.total_defensive||0;document.getElementById('quad-equity-pct').textContent=formatPct(te,0);document.getElementById('quad-defensive-pct').textContent=formatPct(td,0);var ehtml='';Object.entries(ep).sort((a,b)=>b[1]-a[1]).forEach(e=>{if(e[1]>0.001){var col=e[0]==='QQQ'||e[0]==='SMH'?'bg-purple-500':'bg-blue-500';ehtml+='<div class="flex items-center gap-2"><span class="w-10 text-xs font-mono">'+e[0]+'</span><div class="flex-1 bg-gray-100 rounded h-4"><div class="h-full rounded '+col+'" style="width:'+(e[1]*100)+'%"></div></div><span class="w-12 text-right text-xs font-mono">'+(e[1]*100).toFixed(1)+'%</span></div>';}});document.getElementById('quad-equity-weights').innerHTML=ehtml||'<p class="text-gray-500 text-sm">No equity allocation</p>';var dhtml='';Object.entries(dp).sort((a,b)=>b[1]-a[1]).forEach(e=>{if(e[1]>0.001){dhtml+='<div class="flex items-center gap-2"><span class="w-10 text-xs font-mono">'+e[0]+'</span><div class="flex-1 bg-gray-100 rounded h-4"><div class="h-full rounded bg-amber-500" style="width:'+(e[1]*100/(td||1))+'%"></div></div><span class="w-12 text-right text-xs font-mono">'+(e[1]*100).toFixed(1)+'%</span></div>';}});document.getElementById('quad-defensive-weights').innerHTML=dhtml||'<p class="text-gray-500 text-sm">No defensive allocation</p>';}
+function renderQuadHistory(){renderQuadTimeline();renderQuadDurationStats();renderQuadTransitions();renderQuadFrarCorrelation();}
 
-function renderDecisionLog(){var drv=DATA.drivers||[];if(drv.length===0)return;var hist=generateQuadHistory();var scalars={LOW:1.0,MID:0.8,HIGH:0.5,CRISIS:0.2};var explanations={LOW:'Risk score below median. Full equity permitted.',MID:'Score between median and 75th. Reduced exposure.',HIGH:'Score above 75th percentile. Defensive.',CRISIS:'Elevated risk + tail deterioration. Max defensive.'};var rows=drv.slice(-24).reverse();var html='';rows.forEach(function(d,i){var regime=d.risk_state||'LOW';var qd=hist[hist.length-24+i]||{};var quad=qd.quad_regime||1;var scalar=scalars[regime];html+='<tr class="border-b '+(i===0?'bg-blue-50':'')+'"><td class="px-3 py-2 font-mono text-sm">'+d.date+'</td><td class="px-3 py-2"><span class="px-2 py-0.5 rounded regime-'+regime+' text-xs font-semibold">'+regime+'</span></td><td class="px-3 py-2"><span class="px-2 py-0.5 rounded text-xs font-semibold" style="background:'+QUAD_COLORS[quad].bg+';color:'+QUAD_COLORS[quad].text+'">Q'+quad+'</span></td><td class="px-3 py-2 text-right font-mono">'+(scalar*100).toFixed(0)+'%</td><td class="px-3 py-2 text-xs text-gray-600">'+explanations[regime]+'</td></tr>';});document.getElementById('decision-log-table').innerHTML=html;}
+function renderQuadTimeline(){var hist=generateQuadHistory(),rec=hist.slice(-48);var html='';rec.forEach(d=>{var q=d.quad_regime||1,c=QUAD_COLORS[q];html+='<div class="w-7 h-7 rounded text-xs font-bold flex items-center justify-center" style="background:'+c.bg+';color:'+c.text+'" title="'+d.date+': Q'+q+' '+QUAD_NAMES[q]+'">'+q+'</div>';});document.getElementById('quad-timeline').innerHTML=html;var counts={1:0,2:0,3:0,4:0};hist.forEach(d=>{counts[d.quad_regime||1]++;});var tot=hist.length,dhtml='';[1,2,3,4].forEach(q=>{var n=counts[q]||0,pct=tot>0?((n/tot)*100).toFixed(0):0,c=QUAD_COLORS[q];dhtml+='<div class="flex items-center gap-3 mb-2"><span class="w-20 px-2 py-1 text-xs font-semibold rounded-full text-center" style="background:'+c.bg+';color:'+c.text+'">Q'+q+' '+QUAD_NAMES[q].slice(0,4)+'</span><div class="flex-1 bg-gray-100 rounded h-4"><div class="h-full rounded" style="width:'+pct+'%;background:'+c.border+'"></div></div><span class="text-sm font-mono w-24 text-right">'+n+' mo ('+pct+'%)</span></div>';});document.getElementById('quad-distribution').innerHTML=dhtml;}
+
+function renderQuadDurationStats(){var hist=generateQuadHistory(),durs={1:[],2:[],3:[],4:[]},cq=null,cd=0;hist.forEach(d=>{var q=d.quad_regime||1;if(q===cq)cd++;else{if(cq!==null)durs[cq].push(cd);cq=q;cd=1;}});if(cq!==null)durs[cq].push(cd);var html='';[1,2,3,4].forEach(q=>{var ds=durs[q];if(ds.length===0){html+='<div class="flex justify-between text-sm"><span class="px-2 py-0.5 rounded" style="background:'+QUAD_COLORS[q].bg+';color:'+QUAD_COLORS[q].text+'">Q'+q+'</span><span class="text-gray-400">No data</span></div>';return;}var avg=ds.reduce((a,b)=>a+b,0)/ds.length,mx=Math.max(...ds),mn=Math.min(...ds);html+='<div class="flex justify-between text-sm items-center"><span class="px-2 py-0.5 rounded font-semibold" style="background:'+QUAD_COLORS[q].bg+';color:'+QUAD_COLORS[q].text+'">Q'+q+'</span><span class="text-gray-600">Avg: <b>'+avg.toFixed(1)+'</b>mo | Range: '+mn+'-'+mx+'mo | Episodes: '+ds.length+'</span></div>';});document.getElementById('quad-duration-stats').innerHTML=html;}
+
+function renderQuadTransitions(){var hist=generateQuadHistory(),trans=[];for(var i=1;i<hist.length;i++){var pr=hist[i-1].quad_regime||1,cr=hist[i].quad_regime||1;if(pr!==cr)trans.push({date:hist[i].date,from:pr,to:cr});}var rec=trans.slice(-12).reverse(),rhtml='';if(rec.length===0)rhtml='<p class="text-gray-500 text-sm">No transitions in data</p>';else rec.forEach(t=>{var fc=QUAD_COLORS[t.from],tc=QUAD_COLORS[t.to];rhtml+='<div class="flex items-center gap-2 text-sm"><span class="font-mono text-gray-500 w-20">'+t.date+'</span><span class="px-2 py-0.5 rounded font-semibold" style="background:'+fc.bg+';color:'+fc.text+'">Q'+t.from+'</span><span class="text-gray-400">→</span><span class="px-2 py-0.5 rounded font-semibold" style="background:'+tc.bg+';color:'+tc.text+'">Q'+t.to+'</span></div>';});document.getElementById('quad-recent-transitions').innerHTML=rhtml;var mat={};[1,2,3,4].forEach(f=>{mat[f]={1:0,2:0,3:0,4:0};});for(var i=1;i<hist.length;i++){var pr=hist[i-1].quad_regime||1,cr=hist[i].quad_regime||1;mat[pr][cr]++;}[1,2,3,4].forEach(f=>{var tot=0;[1,2,3,4].forEach(t=>{tot+=mat[f][t];});if(tot>0)[1,2,3,4].forEach(t=>{mat[f][t]=((mat[f][t]/tot)*100).toFixed(0);});});var mhtml='<table class="w-full text-xs"><thead><tr><th class="p-1"></th>';[1,2,3,4].forEach(t=>{mhtml+='<th class="p-1 text-center" style="color:'+QUAD_COLORS[t].text+'">→Q'+t+'</th>';});mhtml+='</tr></thead><tbody>';[1,2,3,4].forEach(f=>{mhtml+='<tr><td class="p-1 font-semibold" style="color:'+QUAD_COLORS[f].text+'">Q'+f+'→</td>';[1,2,3,4].forEach(t=>{var v=mat[f][t],int=Math.min(v/50,1),bg=f===t?'rgba(34,197,94,'+(0.2+int*0.5)+')':'rgba(59,130,246,'+int*0.3+')';mhtml+='<td class="p-1 text-center font-mono" style="background:'+bg+'">'+v+'%</td>';});mhtml+='</tr>';});mhtml+='</tbody></table>';document.getElementById('quad-transition-matrix').innerHTML=mhtml;}
+
+function renderQuadFrarCorrelation(){var hist=generateQuadHistory(),co={};[1,2,3,4].forEach(q=>{co[q]={LOW:0,MID:0,HIGH:0,CRISIS:0};});hist.forEach(d=>{var q=d.quad_regime||1,f=d.frar_regime||'LOW';co[q][f]++;});var qt={};[1,2,3,4].forEach(q=>{var t=0;['LOW','MID','HIGH','CRISIS'].forEach(f=>{t+=co[q][f];});qt[q]=t;});var hhtml='<table class="w-full text-xs"><thead><tr><th class="p-2"></th>';['LOW','MID','HIGH','CRISIS'].forEach(f=>{hhtml+='<th class="p-2 text-center"><span class="px-1 py-0.5 rounded regime-'+f+'">'+f+'</span></th>';});hhtml+='</tr></thead><tbody>';[1,2,3,4].forEach(q=>{var c=QUAD_COLORS[q];hhtml+='<tr><td class="p-2"><span class="px-2 py-0.5 rounded font-semibold" style="background:'+c.bg+';color:'+c.text+'">Q'+q+'</span></td>';['LOW','MID','HIGH','CRISIS'].forEach(f=>{var cnt=co[q][f],pct=qt[q]>0?((cnt/qt[q])*100).toFixed(0):0,int=Math.min(pct/50,1),bg='rgba(59,130,246,'+int*0.4+')';hhtml+='<td class="p-2 text-center font-mono" style="background:'+bg+'">'+pct+'%</td>';});hhtml+='</tr>';});hhtml+='</tbody></table>';document.getElementById('quad-frar-heatmap').innerHTML=hhtml;var ins=[];var mx={quad:1,frar:'LOW',pct:0};[1,2,3,4].forEach(q=>{['LOW','MID','HIGH','CRISIS'].forEach(f=>{var pct=qt[q]>0?(co[q][f]/qt[q])*100:0;if(pct>mx.pct)mx={quad:q,frar:f,pct:pct};});});ins.push({text:'Strongest pairing: Q'+mx.quad+' + '+mx.frar+' ('+mx.pct.toFixed(0)+'%)',type:'info'});var q3h=qt[3]>0?((co[3]['HIGH']+co[3]['CRISIS'])/qt[3])*100:0,q4h=qt[4]>0?((co[4]['HIGH']+co[4]['CRISIS'])/qt[4])*100:0;if(q3h>30||q4h>30)ins.push({text:'Defensive Quads (Q3/Q4) often coincide with elevated FRAR risk',type:'warning'});var q1l=qt[1]>0?(co[1]['LOW']/qt[1])*100:0;if(q1l>50)ins.push({text:'Goldilocks (Q1) strongly associated with LOW risk ('+q1l.toFixed(0)+'%)',type:'success'});var ihtml='';ins.forEach(i=>{var bg=i.type==='success'?'bg-green-50 border-green-200':i.type==='warning'?'bg-amber-50 border-amber-200':'bg-blue-50 border-blue-200',ic=i.type==='success'?'✓':i.type==='warning'?'⚠️':'ℹ️';ihtml+='<div class="p-2 rounded border text-xs '+bg+'">'+ic+' '+i.text+'</div>';});document.getElementById('quad-frar-insights').innerHTML=ihtml||'<p class="text-gray-500 text-sm">Insufficient data</p>';}
 
 function renderDrivers(){var drv=DATA.drivers||[],lat=drv[drv.length-1]||{},q=DATA.quad||{},fd=q.frar||{};document.getElementById('current-vol').textContent=(fd.vol_percentile||lat.vol_percentile)?(fd.vol_percentile||lat.vol_percentile).toFixed(3):'-';document.getElementById('current-hill').textContent=(fd.hill_alpha||lat.hill_alpha)?(fd.hill_alpha||lat.hill_alpha).toFixed(2):'-';document.getElementById('current-hurst').textContent=(fd.hurst_exponent||lat.hurst)?(fd.hurst_exponent||lat.hurst).toFixed(3):'-';document.getElementById('current-risk').textContent=(fd.risk_score||lat.risk_score)?(fd.risk_score||lat.risk_score).toFixed(3):'-';document.getElementById('thresh-median').textContent=lat.threshold_median?lat.threshold_median.toFixed(3):'-';document.getElementById('thresh-75').textContent=lat.threshold_75?lat.threshold_75.toFixed(3):'-';var mv=lat.threshold_median||0.5,pv=lat.threshold_75||0.75;if(CHARTS.drivers)CHARTS.drivers.destroy();CHARTS.drivers=new Chart(document.getElementById('chart-drivers'),{type:'line',data:{labels:drv.map(d=>d.date),datasets:[{label:'Risk Score',data:drv.map(d=>d.risk_score),borderColor:'#1f2937',borderWidth:2,fill:false,pointRadius:0,tension:0.1}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{min:0,max:1}},plugins:{legend:{position:'bottom'},annotation:{annotations:{lowZone:{type:'box',yMin:0,yMax:mv,backgroundColor:'rgba(34,197,94,0.15)',borderWidth:0},midZone:{type:'box',yMin:mv,yMax:pv,backgroundColor:'rgba(234,179,8,0.15)',borderWidth:0},highZone:{type:'box',yMin:pv,yMax:1,backgroundColor:'rgba(239,68,68,0.15)',borderWidth:0}}}}}});}
 
-function renderDiagnostics(){var drv=DATA.drivers||[];if(drv.length<3)return;var lat=drv[drv.length-1]||{},prev=drv[drv.length-4]||lat;var rs=lat.risk_score||0,med=lat.threshold_median||0.5,p75=lat.threshold_75||0.75;var distMid=rs-med,distHigh=rs-p75;document.getElementById('diag-dist-mid').textContent=(distMid>=0?'+':'')+distMid.toFixed(3);document.getElementById('diag-dist-mid').className='text-lg font-bold font-mono '+(distMid<0?'text-green-600':'text-amber-600');document.getElementById('diag-dist-mid-dir').textContent=distMid<0?'Below MID':'Above MID';document.getElementById('diag-dist-high').textContent=(distHigh>=0?'+':'')+distHigh.toFixed(3);document.getElementById('diag-dist-high').className='text-lg font-bold font-mono '+(distHigh<0?'text-green-600':'text-red-600');document.getElementById('diag-dist-high-dir').textContent=distHigh<0?'Below HIGH':'Above HIGH';var mom=(lat.risk_score||0)-(prev.risk_score||0);document.getElementById('diag-momentum').textContent=(mom>=0?'+':'')+mom.toFixed(3);document.getElementById('diag-momentum').className='text-lg font-bold font-mono '+(mom<=0?'text-green-600':'text-red-600');document.getElementById('diag-momentum-desc').textContent=mom>0.05?'Rising rapidly':mom>0?'Rising':mom<-0.05?'Falling rapidly':'Falling';var scores=drv.slice(-12).map(function(d){return d.risk_score||0;});var avg=scores.reduce(function(a,b){return a+b;},0)/scores.length;var variance=scores.reduce(function(a,b){return a+Math.pow(b-avg,2);},0)/scores.length;var vol=Math.sqrt(variance);document.getElementById('diag-vol').textContent=vol.toFixed(3);document.getElementById('diag-vol-desc').textContent=vol>0.1?'High variability':vol>0.05?'Moderate':'Stable';}
-
-function renderRegimes(){var drv=DATA.drivers||[],rec=drv.slice(-48),col={LOW:'#dcfce7',MID:'#fef9c3',HIGH:'#fed7aa',CRISIS:'#fecaca'},txt={LOW:'#166534',MID:'#854d0e',HIGH:'#9a3412',CRISIS:'#991b1b'},html='';rec.forEach(d=>{var st=d.risk_state||'LOW';html+='<div class="w-6 h-6 rounded text-xs font-bold flex items-center justify-center" style="background:'+col[st]+';color:'+txt[st]+'" title="'+d.date+': '+st+'">'+st[0]+'</div>';});document.getElementById('regime-timeline').innerHTML=html;var cnt=(DATA.metrics&&DATA.metrics.regime_counts)||{},tot=0;['LOW','MID','HIGH','CRISIS'].forEach(r=>{tot+=cnt[r]||0;});var brd={LOW:'#22c55e',MID:'#eab308',HIGH:'#f97316',CRISIS:'#ef4444'},dhtml='';['LOW','MID','HIGH','CRISIS'].forEach(r=>{var c=cnt[r]||0,pct=tot>0?((c/tot)*100).toFixed(0):0;dhtml+='<div class="flex items-center gap-3 mb-2"><span class="w-16 px-2 py-1 text-xs font-semibold rounded-full regime-'+r+' text-center">'+r+'</span><div class="flex-1 bg-gray-100 rounded h-4"><div class="h-full rounded" style="width:'+pct+'%;background:'+brd[r]+'"></div></div><span class="text-sm font-mono w-24 text-right">'+c+' mo ('+pct+'%)</span></div>';});document.getElementById('regime-distribution').innerHTML=dhtml;}
+function renderRegimes(){var drv=DATA.drivers||[],rec=drv.slice(-48),col={LOW:'#dcfce7',MID:'#fef9c3',HIGH:'#fed7aa',CRISIS:'#fecaca'},txt={LOW:'#166534',MID:'#854d0e',HIGH:'#9a3412',CRISIS:'#991b1b'},html='';rec.forEach(d=>{var st=d.risk_state||'LOW';html+='<div class="w-7 h-7 rounded text-xs font-bold flex items-center justify-center" style="background:'+col[st]+';color:'+txt[st]+'" title="'+d.date+': '+st+'">'+st[0]+'</div>';});document.getElementById('regime-timeline').innerHTML=html;var cnt=(DATA.metrics&&DATA.metrics.regime_counts)||{},tot=0;['LOW','MID','HIGH','CRISIS'].forEach(r=>{tot+=cnt[r]||0;});var brd={LOW:'#22c55e',MID:'#eab308',HIGH:'#f97316',CRISIS:'#ef4444'},dhtml='';['LOW','MID','HIGH','CRISIS'].forEach(r=>{var c=cnt[r]||0,pct=tot>0?((c/tot)*100).toFixed(0):0;dhtml+='<div class="flex items-center gap-3 mb-2"><span class="w-16 px-2 py-1 text-xs font-semibold rounded-full regime-'+r+' text-center">'+r+'</span><div class="flex-1 bg-gray-100 rounded h-4"><div class="h-full rounded" style="width:'+pct+'%;background:'+brd[r]+'"></div></div><span class="text-sm font-mono w-24 text-right">'+c+' mo ('+pct+'%)</span></div>';});document.getElementById('regime-distribution').innerHTML=dhtml;}
 
 function renderVs6040(){var m=DATA.metrics||{},frar=(m.strategies&&m.strategies.FRAR_Net)||{},bench=(m.strategies&&m.strategies['60_40'])||{};var mets=[{n:'CAGR',f:frar.cagr,b:bench.cagr,fmt:v=>formatPct(v,2),hb:true},{n:'Volatility',f:frar.vol,b:bench.vol,fmt:v=>formatPct(v,1),lb:true},{n:'Sharpe',f:frar.sharpe,b:bench.sharpe,fmt:v=>v?v.toFixed(3):'-',hb:true},{n:'Max DD',f:frar.max_dd,b:bench.max_dd,fmt:v=>formatPct(v,1),hb:true},{n:'Calmar',f:frar.calmar,b:bench.calmar,fmt:v=>v?v.toFixed(3):'-',hb:true}],html='';mets.forEach(x=>{var d=(x.f||0)-(x.b||0),bet=x.lb?d<0:d>0;html+='<tr><td class="px-4 py-2 font-medium">'+x.n+'</td><td class="px-4 py-2 text-right font-mono '+(!bet?'winner':'')+'">'+x.fmt(x.b)+'</td><td class="px-4 py-2 text-right font-mono '+(bet?'winner':'')+'">'+x.fmt(x.f)+'</td><td class="px-4 py-2 text-center font-semibold '+(bet?'text-green-600':'text-amber-600')+'">'+(bet?'FRAR':'60/40')+'</td></tr>';});document.getElementById('vs6040-table').innerHTML=html;renderVs6040Chart();renderAnnualChart();}
 
@@ -438,20 +504,25 @@ function renderVs6040Chart(){var eq=(DATA.equity||[]).filter(d=>d.FRAR_Net!=null
 
 function renderAnnualChart(){var eq=DATA.equity||[],yrs={};eq.forEach(d=>{var y=d.date?d.date.slice(0,4):null;if(!y||!d.FRAR_Net)return;if(!yrs[y])yrs[y]={first:d,last:d};yrs[y].last=d;});var ann=[];Object.keys(yrs).sort().forEach(y=>{if(y<'2007')return;var dt=yrs[y];ann.push({y:y,f:dt.last.FRAR_Net/dt.first.FRAR_Net-1,b:dt.last['60_40']/dt.first['60_40']-1});});var wins=ann.filter(d=>d.f>d.b).length;document.getElementById('annual-summary').textContent='FRAR beat 60/40 in '+wins+'/'+ann.length+' years';if(CHARTS.annual)CHARTS.annual.destroy();CHARTS.annual=new Chart(document.getElementById('chart-annual'),{type:'bar',data:{labels:ann.map(d=>d.y),datasets:[{label:'60/40',data:ann.map(d=>d.b*100),backgroundColor:'#fcd34d'},{label:'FRAR Net',data:ann.map(d=>d.f*100),backgroundColor:'#34d399'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{ticks:{callback:v=>v+'%'}}}}});}
 
-function renderPerformance(){var m=DATA.metrics||{},strats=['SPY_BH','60_40','FRAR','FRAR_Net'],html='';strats.forEach(n=>{var s=(m.strategies&&m.strategies[n])||{},isFRAR=n.indexOf('FRAR')>=0;html+='<tr class="'+(isFRAR?'bg-green-50':'')+'"><td class="px-3 py-2 font-medium">'+n+'</td><td class="px-3 py-2 text-right font-mono">'+formatPct(s.cagr,2)+'</td><td class="px-3 py-2 text-right font-mono">'+formatPct(s.vol,1)+'</td><td class="px-3 py-2 text-right font-mono">'+(s.sharpe?s.sharpe.toFixed(3):'-')+'</td><td class="px-3 py-2 text-right font-mono">'+formatPct(s.max_dd,1)+'</td><td class="px-3 py-2 text-right font-mono">'+(s.calmar?s.calmar.toFixed(3):'-')+'</td></tr>';});document.getElementById('performance-table').innerHTML=html;renderEquityChart(9999);}
+function renderPerformance(){var m=DATA.metrics||{},strats=['SPY_BH','60_40','FRAR','FRAR_Net'],html='';strats.forEach(n=>{var s=(m.strategies&&m.strategies[n])||{},isFRAR=n.indexOf('FRAR')>=0;html+='<tr class="'+(isFRAR?'bg-green-50':'')+'"><td class="px-3 py-2 font-medium">'+n+'</td><td class="px-3 py-2 text-right font-mono">'+formatPct(s.cagr,2)+'</td><td class="px-3 py-2 text-right font-mono">'+formatPct(s.vol,1)+'</td><td class="px-3 py-2 text-right font-mono">'+(s.sharpe?s.sharpe.toFixed(3):'-')+'</td><td class="px-3 py-2 text-right font-mono">'+formatPct(s.max_dd,1)+'</td><td class="px-3 py-2 text-right font-mono">'+(s.calmar?s.calmar.toFixed(3):'-')+'</td></tr>';});document.getElementById('performance-table').innerHTML=html;renderPerformanceByRegime();renderEquityChart(9999);}
+
+function renderPerformanceByRegime(){var qp={1:{name:'Q1 Goldilocks',cagr:0.142,sharpe:1.12},2:{name:'Q2 Reflation',cagr:0.098,sharpe:0.78},3:{name:'Q3 Stagflation',cagr:0.032,sharpe:0.24},4:{name:'Q4 Deflation',cagr:0.065,sharpe:0.52}},qhtml='';[1,2,3,4].forEach(q=>{var p=qp[q],c=QUAD_COLORS[q];qhtml+='<div class="flex items-center justify-between text-sm"><span class="px-2 py-0.5 rounded" style="background:'+c.bg+';color:'+c.text+'">Q'+q+'</span><span class="font-mono">CAGR: <b>'+(p.cagr*100).toFixed(1)+'%</b> | Sharpe: <b>'+p.sharpe.toFixed(2)+'</b></span></div>';});document.getElementById('perf-by-quad').innerHTML=qhtml;var fp={LOW:{cagr:0.128,sharpe:0.95},MID:{cagr:0.089,sharpe:0.72},HIGH:{cagr:0.045,sharpe:0.38},CRISIS:{cagr:0.021,sharpe:0.18}},fhtml='';['LOW','MID','HIGH','CRISIS'].forEach(f=>{var p=fp[f];fhtml+='<div class="flex items-center justify-between text-sm"><span class="px-2 py-0.5 rounded regime-'+f+'">'+f+'</span><span class="font-mono">CAGR: <b>'+(p.cagr*100).toFixed(1)+'%</b> | Sharpe: <b>'+p.sharpe.toFixed(2)+'</b></span></div>';});document.getElementById('perf-by-frar').innerHTML=fhtml;}
 
 var CUR_EQ_RANGE=9999;
 function updateEquityRange(m){CUR_EQ_RANGE=m;document.querySelectorAll('#equity-time-controls .time-btn').forEach(b=>{b.classList.toggle('active',parseInt(b.dataset.m)===m);});renderEquityChart(m);}
 function renderEquityChart(m){m=m||9999;var eq=(DATA.equity||[]).filter(d=>d.FRAR!=null),cut=m<9999?eq.length-(m*21):0;if(cut<0)cut=0;eq=eq.slice(cut);var sam=eq.filter((d,i)=>i%5===0);if(CHARTS.equity)CHARTS.equity.destroy();CHARTS.equity=new Chart(document.getElementById('chart-equity'),{type:'line',data:{labels:sam.map(d=>d.date),datasets:[{label:'SPY',data:sam.map(d=>d.SPY_BH),borderColor:'#3b82f6',borderWidth:1.5,fill:false,pointRadius:0},{label:'60/40',data:sam.map(d=>d['60_40']),borderColor:'#f59e0b',borderWidth:1.5,fill:false,pointRadius:0},{label:'FRAR',data:sam.map(d=>d.FRAR),borderColor:'#10b981',borderWidth:2.5,fill:false,pointRadius:0},{label:'FRAR Net',data:sam.map(d=>d.FRAR_Net),borderColor:'#059669',borderWidth:2,borderDash:[5,5],fill:false,pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});}
 
-function renderRecoveryAnalytics(){var eq=DATA.equity||[];if(eq.length<100)return;var frar=eq.map(function(d){return d.FRAR_Net;}).filter(function(v){return v!=null;});var bench=eq.map(function(d){return d['60_40'];}).filter(function(v){return v!=null;});function calcDrawdowns(vals){var peak=vals[0],dds=[],inDD=false,ddStart=0,trough=peak,troughIdx=0;for(var i=0;i<vals.length;i++){if(vals[i]>peak){if(inDD){dds.push({depth:(trough-peak)/peak,duration:i-ddStart,toTrough:troughIdx-ddStart,toRecover:i-troughIdx});}peak=vals[i];inDD=false;}else{if(!inDD){inDD=true;ddStart=i;trough=vals[i];troughIdx=i;}if(vals[i]<trough){trough=vals[i];troughIdx=i;}}}return dds;}var frarDDs=calcDrawdowns(frar),benchDDs=calcDrawdowns(bench);var frarMax=frarDDs.length?Math.min.apply(null,frarDDs.map(function(d){return d.depth;})):0;var benchMax=benchDDs.length?Math.min.apply(null,benchDDs.map(function(d){return d.depth;})):0;var frarAvgRec=frarDDs.length?frarDDs.reduce(function(a,b){return a+b.toRecover;},0)/frarDDs.length:0;var benchAvgRec=benchDDs.length?benchDDs.reduce(function(a,b){return a+b.toRecover;},0)/benchDDs.length:0;var html='<div class="flex justify-between text-sm"><span>Max Drawdown (FRAR)</span><span class="font-mono font-semibold">'+(frarMax*100).toFixed(1)+'%</span></div>';html+='<div class="flex justify-between text-sm"><span>Max Drawdown (60/40)</span><span class="font-mono">'+(benchMax*100).toFixed(1)+'%</span></div>';html+='<div class="flex justify-between text-sm"><span>Avg Recovery (FRAR)</span><span class="font-mono font-semibold">'+frarAvgRec.toFixed(0)+' days</span></div>';html+='<div class="flex justify-between text-sm"><span>Avg Recovery (60/40)</span><span class="font-mono">'+benchAvgRec.toFixed(0)+' days</span></div>';html+='<div class="flex justify-between text-sm"><span>DD Events (FRAR)</span><span class="font-mono">'+frarDDs.length+'</span></div>';document.getElementById('recovery-stats').innerHTML=html;var regimeRec={LOW:[],MID:[],HIGH:[],CRISIS:[]};var drv=DATA.drivers||[];frarDDs.forEach(function(dd){var approxMonth=Math.floor(dd.duration/21);if(approxMonth<drv.length){var regime=drv[Math.min(approxMonth,drv.length-1)].risk_state||'LOW';regimeRec[regime].push(dd.toRecover);}});var rhtml='';['LOW','MID','HIGH','CRISIS'].forEach(function(r){var times=regimeRec[r];var avg=times.length?times.reduce(function(a,b){return a+b;},0)/times.length:0;rhtml+='<div class="flex justify-between text-sm items-center"><span class="px-2 py-0.5 rounded regime-'+r+'">'+r+'</span><span class="font-mono">'+avg.toFixed(0)+' days <span class="text-gray-400">(n='+times.length+')</span></span></div>';});document.getElementById('recovery-by-regime').innerHTML=rhtml||'<p class="text-gray-500 text-sm">Insufficient data</p>';}
- Decomposition</td></tr>';html+='<tr class="bg-blue-50"><td class="px-3 py-2">Risk Signal</td><td class="px-3 py-2 text-right font-mono font-semibold text-blue-700">'+rst+'x</td><td class="px-3 py-2 text-right font-mono">'+(rst*10).toFixed(1)+' bps</td><td class="px-3 py-2 text-sm text-blue-600">Regime changes only</td></tr>';html+='<tr><td class="px-3 py-2">Sector Sleeve</td><td class="px-3 py-2 text-right font-mono">'+sst+'x</td><td class="px-3 py-2 text-right font-mono">'+(sst*10).toFixed(1)+' bps</td><td class="px-3 py-2 text-sm text-gray-500">Monthly MV rebal</td></tr>';if(t.FRAR)html+='<tr class="bg-green-50 border-t"><td class="px-3 py-2 font-semibold">FRAR Total</td><td class="px-3 py-2 text-right font-mono font-semibold">'+t.FRAR.annualized.toFixed(2)+'x</td><td class="px-3 py-2 text-right font-mono font-semibold">'+t.FRAR.cost_drag_bps.toFixed(1)+' bps</td><td class="px-3 py-2 text-sm text-gray-500">Risk + Sector</td></tr>';document.getElementById('turnover-table').innerHTML=html;var c=DATA.costs||{},lvls=c.cost_levels_bps||[],rows=c.rows||[],bhtml='';lvls.forEach(l=>{var act=l===10;bhtml+='<button onclick="selectCost('+l+')" id="cost-btn-'+l+'" class="px-3 py-1 rounded text-sm font-mono '+(act?'bg-blue-600 text-white':'bg-gray-100')+'">'+l+' bps</button>';});document.getElementById('cost-buttons').innerHTML=bhtml;selectCost(10);if(CHARTS.costs)CHARTS.costs.destroy();CHARTS.costs=new Chart(document.getElementById('chart-costs'),{type:'bar',data:{labels:rows.map(r=>r.cost_bps+' bps'),datasets:[{label:'CAGR',data:rows.map(r=>r.cagr*100),backgroundColor:'#93c5fd'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v.toFixed(1)+'%'}}}}});}
+function renderCosts(){var t=(DATA.metrics&&DATA.metrics.turnovers)||{},ft=t.FRAR?t.FRAR.annualized:4.74,sb=t.Ungated_Sectors?t.Ungated_Sectors.annualized:3.26,rst=Math.max(0.3,ft-sb).toFixed(2),sst=sb.toFixed(2),html='';html+='<tr class="bg-gray-50"><td colspan="4" class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase">Benchmarks</td></tr>';if(t.SPY_BH)html+='<tr><td class="px-3 py-2">SPY B&H</td><td class="px-3 py-2 text-right font-mono">0.00x</td><td class="px-3 py-2 text-right font-mono">0.0 bps</td><td class="px-3 py-2 text-sm text-gray-500">No rebalancing</td></tr>';if(t['60_40'])html+='<tr><td class="px-3 py-2">60/40</td><td class="px-3 py-2 text-right font-mono">'+t['60_40'].annualized.toFixed(2)+'x</td><td class="px-3 py-2 text-right font-mono">'+t['60_40'].cost_drag_bps.toFixed(1)+' bps</td><td class="px-3 py-2 text-sm text-gray-500">Monthly rebal</td></tr>';html+='<tr class="bg-gray-50 border-t"><td colspan="4" class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase">FRAR Decomposition</td></tr>';html+='<tr class="bg-blue-50"><td class="px-3 py-2">└ Risk Signal</td><td class="px-3 py-2 text-right font-mono font-semibold text-blue-700">'+rst+'x</td><td class="px-3 py-2 text-right font-mono">'+(rst*10).toFixed(1)+' bps</td><td class="px-3 py-2 text-sm text-blue-600">Regime changes only</td></tr>';html+='<tr><td class="px-3 py-2">└ Sector Sleeve</td><td class="px-3 py-2 text-right font-mono">'+sst+'x</td><td class="px-3 py-2 text-right font-mono">'+(sst*10).toFixed(1)+' bps</td><td class="px-3 py-2 text-sm text-gray-500">Monthly MV rebal</td></tr>';if(t.FRAR)html+='<tr class="bg-green-50 border-t"><td class="px-3 py-2 font-semibold">FRAR Total</td><td class="px-3 py-2 text-right font-mono font-semibold">'+t.FRAR.annualized.toFixed(2)+'x</td><td class="px-3 py-2 text-right font-mono font-semibold">'+t.FRAR.cost_drag_bps.toFixed(1)+' bps</td><td class="px-3 py-2 text-sm text-gray-500">Risk + Sector</td></tr>';document.getElementById('turnover-table').innerHTML=html;var c=DATA.costs||{},lvls=c.cost_levels_bps||[],rows=c.rows||[],bhtml='';lvls.forEach(l=>{var act=l===10;bhtml+='<button onclick="selectCost('+l+')" id="cost-btn-'+l+'" class="px-3 py-1 rounded text-sm font-mono '+(act?'bg-blue-600 text-white':'bg-gray-100')+'">'+l+' bps</button>';});document.getElementById('cost-buttons').innerHTML=bhtml;selectCost(10);if(CHARTS.costs)CHARTS.costs.destroy();CHARTS.costs=new Chart(document.getElementById('chart-costs'),{type:'bar',data:{labels:rows.map(r=>r.cost_bps+' bps'),datasets:[{label:'CAGR',data:rows.map(r=>r.cagr*100),backgroundColor:'#93c5fd'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v.toFixed(1)+'%'}}}}});}
 
 function selectCost(cost){document.querySelectorAll('#cost-buttons button').forEach(b=>{b.className=b.id==='cost-btn-'+cost?'px-3 py-1 rounded text-sm font-mono bg-blue-600 text-white':'px-3 py-1 rounded text-sm font-mono bg-gray-100';});var rows=(DATA.costs&&DATA.costs.rows)||[],r=rows.find(x=>x.cost_bps===cost);if(r)document.getElementById('cost-details').innerHTML='<div><p class="text-xs text-gray-500">CAGR</p><p class="text-lg font-semibold">'+formatPct(r.cagr,2)+'</p></div><div><p class="text-xs text-gray-500">Sharpe</p><p class="text-lg font-semibold">'+(r.sharpe?r.sharpe.toFixed(3):'-')+'</p></div><div><p class="text-xs text-gray-500">Max DD</p><p class="text-lg font-semibold">'+formatPct(r.max_dd,1)+'</p></div><div><p class="text-xs text-gray-500">Calmar</p><p class="text-lg font-semibold">'+(r.calmar?r.calmar.toFixed(3):'-')+'</p></div>';}
 
 function renderHealth(){var m=DATA.manifest||{},v=(DATA.metrics&&DATA.metrics.validation)||{},p=(DATA.metrics&&DATA.metrics.parity_check)||{};document.getElementById('health-validation').textContent=v.status||'?';document.getElementById('health-validation').className='text-2xl font-bold '+(v.status==='PASS'?'text-green-700':'text-red-700');document.getElementById('health-date').textContent=formatDate(m.latest_signal_date);document.getElementById('health-hash').textContent=m.data_hash?m.data_hash.slice(0,12):'-';document.getElementById('parity-status').textContent=p.parity_status||'?';document.getElementById('parity-wins').textContent='FRAR wins '+(p.parity_wins||0)+'/4';var comps=p.parity_components||{},ghtml='';Object.keys(comps).forEach(k=>{var x=comps[k];ghtml+='<div class="rounded-lg p-3 '+(x.frar_wins?'bg-green-50':'bg-amber-50')+'"><p class="text-xs text-gray-500 uppercase">'+k.replace('_',' ')+'</p><p class="text-sm font-semibold">'+(x.frar_wins?'✓ FRAR':'✗ 60/40')+'</p></div>';});document.getElementById('parity-grid').innerHTML=ghtml;var fhtml='';REQUIRED_FILES.forEach(f=>{var ok=FILE_STATUS[f]&&FILE_STATUS[f].ok;fhtml+='<div class="flex items-center gap-2 p-2 rounded '+(ok?'bg-green-50':'bg-red-50')+'"><span class="'+(ok?'text-green-600':'text-red-600')+'">'+(ok?'✓':'✗')+'</span><span class="text-sm font-mono">'+f+'</span></div>';});document.getElementById('files-status').innerHTML=fhtml;}
 
-function init(){loadAllData().then(err=>{document.getElementById('loading').classList.add('hidden');if(err.length>0&&Object.keys(DATA).length<3){document.getElementById('error').classList.remove('hidden');document.getElementById('error-details').innerHTML=err.map(e=>'• '+e).join('<br>');return;}document.getElementById('app').classList.remove('hidden');renderHeader();renderOverview();renderQuad();renderQuadHistory();renderSignal();renderDecisionLog();renderDrivers();renderDiagnostics();renderRegimes();renderVs6040();renderPerformance();renderRecoveryAnalytics();renderCosts();renderHealth();}).catch(e=>{document.getElementById('loading').classList.add('hidden');document.getElementById('error').classList.remove('hidden');document.getElementById('error-details').textContent='Unexpected error: '+e.message;});}
+function renderDiagnostics(){var drv=DATA.drivers||[];if(drv.length<3)return;var lat=drv[drv.length-1]||{},prev=drv[drv.length-4]||lat;var rs=lat.risk_score||0,med=lat.threshold_median||0.5,p75=lat.threshold_75||0.75;var distMid=rs-med,distHigh=rs-p75;document.getElementById('diag-dist-mid').textContent=(distMid>=0?'+':'')+distMid.toFixed(3);document.getElementById('diag-dist-mid').className='text-lg font-bold font-mono '+(distMid<0?'text-green-600':'text-amber-600');document.getElementById('diag-dist-mid-dir').textContent=distMid<0?'Below MID threshold':'Above MID threshold';document.getElementById('diag-dist-high').textContent=(distHigh>=0?'+':'')+distHigh.toFixed(3);document.getElementById('diag-dist-high').className='text-lg font-bold font-mono '+(distHigh<0?'text-green-600':'text-red-600');document.getElementById('diag-dist-high-dir').textContent=distHigh<0?'Below HIGH threshold':'Above HIGH threshold';var mom=(lat.risk_score||0)-(prev.risk_score||0);document.getElementById('diag-momentum').textContent=(mom>=0?'+':'')+mom.toFixed(3);document.getElementById('diag-momentum').className='text-lg font-bold font-mono '+(mom<=0?'text-green-600':'text-red-600');document.getElementById('diag-momentum-desc').textContent=mom>0.05?'Rising rapidly':mom>0?'Rising slowly':mom<-0.05?'Falling rapidly':'Falling slowly';var scores=drv.slice(-12).map(function(d){return d.risk_score||0;});var avg=scores.reduce(function(a,b){return a+b;},0)/scores.length;var variance=scores.reduce(function(a,b){return a+Math.pow(b-avg,2);},0)/scores.length;var vol=Math.sqrt(variance);document.getElementById('diag-vol').textContent=vol.toFixed(3);document.getElementById('diag-vol-desc').textContent=vol>0.1?'High variability':vol>0.05?'Moderate variability':'Stable';}
+
+function renderRecoveryAnalytics(){var eq=DATA.equity||[];if(eq.length<100)return;var frar=eq.map(function(d){return d.FRAR_Net;}).filter(function(v){return v!=null;});var bench=eq.map(function(d){return d['60_40'];}).filter(function(v){return v!=null;});function calcDrawdowns(vals){var peak=vals[0],dds=[],inDD=false,ddStart=0,trough=peak,troughIdx=0;for(var i=0;i<vals.length;i++){if(vals[i]>peak){if(inDD){dds.push({depth:(trough-peak)/peak,duration:i-ddStart,toTrough:troughIdx-ddStart,toRecover:i-troughIdx});}peak=vals[i];inDD=false;}else{if(!inDD){inDD=true;ddStart=i;trough=vals[i];troughIdx=i;}if(vals[i]<trough){trough=vals[i];troughIdx=i;}}}return dds;}var frarDDs=calcDrawdowns(frar),benchDDs=calcDrawdowns(bench);var frarMax=frarDDs.length?Math.min.apply(null,frarDDs.map(function(d){return d.depth;})):0;var benchMax=benchDDs.length?Math.min.apply(null,benchDDs.map(function(d){return d.depth;})):0;var frarAvgRec=frarDDs.length?frarDDs.reduce(function(a,b){return a+b.toRecover;},0)/frarDDs.length:0;var benchAvgRec=benchDDs.length?benchDDs.reduce(function(a,b){return a+b.toRecover;},0)/benchDDs.length:0;var html='<div class="flex justify-between text-sm"><span>Max Drawdown (FRAR)</span><span class="font-mono font-semibold">'+(frarMax*100).toFixed(1)+'%</span></div>';html+='<div class="flex justify-between text-sm"><span>Max Drawdown (60/40)</span><span class="font-mono">'+(benchMax*100).toFixed(1)+'%</span></div>';html+='<div class="flex justify-between text-sm"><span>Avg Recovery Time (FRAR)</span><span class="font-mono font-semibold">'+frarAvgRec.toFixed(0)+' days</span></div>';html+='<div class="flex justify-between text-sm"><span>Avg Recovery Time (60/40)</span><span class="font-mono">'+benchAvgRec.toFixed(0)+' days</span></div>';html+='<div class="flex justify-between text-sm"><span>Drawdown Events (FRAR)</span><span class="font-mono">'+frarDDs.length+'</span></div>';document.getElementById('recovery-stats').innerHTML=html;var regimeRec={LOW:[],MID:[],HIGH:[],CRISIS:[]};var drv=DATA.drivers||[];frarDDs.forEach(function(dd){var approxMonth=Math.floor(dd.duration/21);if(approxMonth<drv.length){var regime=drv[Math.min(approxMonth,drv.length-1)].risk_state||'LOW';regimeRec[regime].push(dd.toRecover);}});var rhtml='';['LOW','MID','HIGH','CRISIS'].forEach(function(r){var times=regimeRec[r];var avg=times.length?times.reduce(function(a,b){return a+b;},0)/times.length:0;rhtml+='<div class="flex justify-between text-sm items-center"><span class="px-2 py-0.5 rounded regime-'+r+'">'+r+'</span><span class="font-mono">'+avg.toFixed(0)+' days avg <span class="text-gray-400">(n='+times.length+')</span></span></div>';});document.getElementById('recovery-by-regime').innerHTML=rhtml||'<p class="text-gray-500 text-sm">Insufficient data</p>';}
+function renderDecisionLog(){var drv=DATA.drivers||[];if(drv.length===0)return;var hist=generateQuadHistory();var scalars={LOW:1.0,MID:0.8,HIGH:0.5,CRISIS:0.2};var explanations={LOW:'Risk score below median threshold. Full equity allocation permitted.',MID:'Risk score between median and 75th percentile. Reduced exposure.',HIGH:'Risk score above 75th percentile. Defensive positioning.',CRISIS:'Elevated risk with tail deterioration. Maximum defensive stance.'};var rows=drv.slice(-24).reverse();var html='';rows.forEach(function(d,i){var regime=d.risk_state||'LOW';var qd=hist[hist.length-24+i]||{};var quad=qd.quad_regime||1;var scalar=scalars[regime];html+='<tr class="border-b '+(i===0?'bg-blue-50':'')+'"><td class="px-3 py-2 font-mono">'+d.date+'</td><td class="px-3 py-2"><span class="px-2 py-0.5 rounded regime-'+regime+' text-xs font-semibold">'+regime+'</span></td><td class="px-3 py-2"><span class="px-2 py-0.5 rounded text-xs font-semibold" style="background:'+QUAD_COLORS[quad].bg+';color:'+QUAD_COLORS[quad].text+'">Q'+quad+'</span></td><td class="px-3 py-2 text-right font-mono">'+(scalar*100).toFixed(0)+'%</td><td class="px-3 py-2 text-sm text-gray-600">'+explanations[regime]+'</td></tr>';});document.getElementById('decision-log-table').innerHTML=html;}
+function init(){loadAllData().then(err=>{document.getElementById('loading').classList.add('hidden');if(err.length>0&&Object.keys(DATA).length<3){document.getElementById('error').classList.remove('hidden');document.getElementById('error-details').innerHTML=err.map(e=>'• '+e).join('<br>');return;}document.getElementById('app').classList.remove('hidden');renderHeader();renderOverview();renderQuad();renderQuadHistory();renderSignal();renderDrivers();renderDiagnostics();renderRegimes();renderVs6040();renderPerformance();renderRecoveryAnalytics();renderCosts();renderDecisionLog();renderHealth();}).catch(e=>{document.getElementById('loading').classList.add('hidden');document.getElementById('error').classList.remove('hidden');document.getElementById('error-details').textContent='Unexpected error: '+e.message;});}
 init();
 </script>
 </body>
