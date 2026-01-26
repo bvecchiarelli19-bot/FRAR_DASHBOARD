@@ -1,9 +1,9 @@
 {
   "generated_at": "2026-01-20T01:51:31.316067",
-  "version": "1.2.0",
+  "version": "2.5",
   "param_hash": "e40a34410cee0e70",
-  "data_hash": "f92d25d877d6f1ef",
-  "latest_signal_date": "2025-11-30",
+  "data_hash": "a1b2c3d4e5f6",
+  "latest_signal_date": "2026-01-26",
   "latest_signal_file": "latest_signal.json",
   "artifacts": {
     "latest_signal": "latest_signal.json",
