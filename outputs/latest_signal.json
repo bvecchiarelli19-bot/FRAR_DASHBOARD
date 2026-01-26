@@ -1,48 +1,17 @@
 {
   "as_of_date": "2026-01-26",
   "execution_date": "2026-01-27",
-  "regime": "MID",
-  "scalar": 0.8,
-  "model_target_weights": {
-    "XLK": 0.2907502984916105,
-    "XLF": 0.23389753392688745,
-    "XLE": 0.06306147440131482,
-    "XLV": 0.0,
-    "XLP": 0.0,
-    "XLU": 0.2762974050832843,
-    "XLI": 0.13599328809690295,
-    "TLT": 0.0,
-    "IEF": 0.0,
-    "GLD": 0.0
-  },
+  "regime": "LOW",
+  "scalar": 1.0,
   "executable_weights": {
-    "XLK": 0.2911139499858221,
-    "XLF": 0.234190077694327,
-    "XLE": 0.061889612853498685,
-    "XLV": 0.0,
-    "XLP": 0.0,
-    "XLU": 0.27664297984185404,
-    "XLI": 0.1361633796244981,
-    "TLT": 0.0,
-    "IEF": 0.0,
-    "GLD": 0.0
-  },
-  "expected_gross_exposure": 0.9999999999999999,
-  "turnover_two_way_vs_prior": 0.47348163839416413,
-  "cost_bps_assumption": 10,
-  "turnover_definition": "Two-way turnover: sum(abs(weight_new - weight_old)) across all assets. Cost applied as bps per unit turnover.",
-  "risk_components": {
-    "vol_percentile": 0.4076,
-    "hill_alpha": 1.8826,
-    "hurst": 0.3851,
-    "risk_score": 0.6268
-  },
-  "thresholds": {
-    "median": 0.526,
-    "75th": 0.6872
-  },
-  "data_hash": "f92d25d877d6f1ef",
-  "param_hash": "e40a34410cee0e70",
-  "version": "1.2.0",
-  "calendar_notes": "Signal as-of: 2025-11-30 (month-end). Execution: T+1 business day (2025-12-01). If execution date is holiday, defer to next business day."
+    "XLK": 0.18,
+    "XLF": 0.15,
+    "XLI": 0.14,
+    "QQQ": 0.12,
+    "XLV": 0.10,
+    "XLE": 0.08,
+    "XLP": 0.08,
+    "SMH": 0.08,
+    "XLU": 0.07
+  }
 }
