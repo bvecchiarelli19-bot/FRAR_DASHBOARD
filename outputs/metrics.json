@@ -1,27 +1,41 @@
 {
   "strategies": {
     "SPY_BH": {
-      "cagr": 0.1040,
-      "vol": 0.1938,
-      "sharpe": 0.537,
+      "cagr": 0.1084,
+      "vol": 0.1939,
+      "sharpe": 0.559,
       "max_dd": -0.552,
-      "calmar": 0.188
+      "calmar": 0.196
     },
     "60_40": {
       "cagr": 0.0844,
-      "vol": 0.111,
+      "vol": 0.1111,
       "sharpe": 0.760,
       "max_dd": -0.282,
       "calmar": 0.299
     },
     "FRAR": {
+      "cagr": 0.0967,
+      "vol": 0.1442,
+      "sharpe": 0.671,
+      "max_dd": -0.219,
+      "calmar": 0.442
+    },
+    "FRAR_Net": {
+      "cagr": 0.0930,
+      "vol": 0.1442,
+      "sharpe": 0.645,
+      "max_dd": -0.221,
+      "calmar": 0.422
+    },
+    "FRAR_Quad": {
       "cagr": 0.1187,
       "vol": 0.1332,
       "sharpe": 0.891,
       "max_dd": -0.249,
       "calmar": 0.477
     },
-    "FRAR_Net": {
+    "FRAR_Quad_Net": {
       "cagr": 0.1145,
       "vol": 0.1332,
       "sharpe": 0.859,
@@ -32,7 +46,8 @@
   "turnovers": {
     "SPY_BH": {"annualized": 0.0, "cost_drag_bps": 0.0},
     "60_40": {"annualized": 0.21, "cost_drag_bps": 2.1},
-    "FRAR": {"annualized": 4.85, "cost_drag_bps": 48.5},
+    "FRAR": {"annualized": 4.74, "cost_drag_bps": 47.4},
+    "FRAR_Quad": {"annualized": 4.85, "cost_drag_bps": 48.5},
     "Ungated_Sectors": {"annualized": 3.26, "cost_drag_bps": 32.6}
   },
   "regime_counts": {
@@ -47,12 +62,12 @@
   },
   "parity_check": {
     "parity_status": "PASS",
-    "parity_wins": 3,
+    "parity_wins": 4,
     "parity_components": {
-      "sharpe": {"frar": 0.859, "benchmark": 0.537, "frar_wins": true},
+      "sharpe": {"frar": 0.859, "benchmark": 0.559, "frar_wins": true},
       "max_dd": {"frar": -0.261, "benchmark": -0.552, "frar_wins": true},
-      "cagr": {"frar": 0.1145, "benchmark": 0.1040, "frar_wins": true},
-      "calmar": {"frar": 0.438, "benchmark": 0.188, "frar_wins": true}
+      "cagr": {"frar": 0.1145, "benchmark": 0.1084, "frar_wins": true},
+      "calmar": {"frar": 0.438, "benchmark": 0.196, "frar_wins": true}
     }
   }
 }
