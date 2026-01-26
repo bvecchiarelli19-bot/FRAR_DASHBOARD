@@ -1,73 +1,104 @@
 {
   "strategies": {
     "SPY_BH": {
-      "cagr": 0.1084,
-      "vol": 0.1939,
-      "sharpe": 0.559,
-      "max_dd": -0.552,
-      "calmar": 0.196
+      "cagr": 0.10398328278978819,
+      "vol": 0.1937593384536292,
+      "sharpe": 0.5366620448834452,
+      "max_dd": -0.55189445900176,
+      "calmar": 0.1884115361075886
     },
     "60_40": {
-      "cagr": 0.0844,
-      "vol": 0.1111,
-      "sharpe": 0.760,
-      "max_dd": -0.282,
-      "calmar": 0.299
+      "cagr": 0.0763083088167309,
+      "vol": 0.11052032873184346,
+      "sharpe": 0.6904459088416076,
+      "max_dd": -0.2992281158111014,
+      "calmar": 0.25501717514039784
     },
     "FRAR": {
-      "cagr": 0.0967,
-      "vol": 0.1442,
-      "sharpe": 0.671,
-      "max_dd": -0.219,
-      "calmar": 0.442
+      "cagr": 0.09761537074130544,
+      "vol": 0.12729476157849307,
+      "sharpe": 0.766845151605971,
+      "max_dd": -0.27054088299804835,
+      "calmar": 0.36081559895703313
     },
     "FRAR_Net": {
-      "cagr": 0.0930,
-      "vol": 0.1442,
-      "sharpe": 0.645,
-      "max_dd": -0.221,
-      "calmar": 0.422
+      "cagr": 0.09522734440734291,
+      "vol": 0.12729476157849307,
+      "sharpe": 0.7480853353782623,
+      "max_dd": -0.27054088299804835,
+      "calmar": 0.3519887395652134
     },
     "FRAR_Quad": {
-      "cagr": 0.1187,
-      "vol": 0.1332,
-      "sharpe": 0.891,
-      "max_dd": -0.249,
-      "calmar": 0.477
+      "cagr": 0.11935458283115241,
+      "vol": 0.13324371249013192,
+      "sharpe": 0.8957614629657805,
+      "max_dd": -0.2611224852461207,
+      "calmar": 0.45708274689042916
     },
     "FRAR_Quad_Net": {
-      "cagr": 0.1145,
-      "vol": 0.1332,
-      "sharpe": 0.859,
-      "max_dd": -0.261,
-      "calmar": 0.438
+      "cagr": 0.1145000559591653,
+      "vol": 0.13324371249013192,
+      "sharpe": 0.8593280224584348,
+      "max_dd": -0.2611224852461207,
+      "calmar": 0.43849175168214033
     }
   },
   "turnovers": {
-    "SPY_BH": {"annualized": 0.0, "cost_drag_bps": 0.0},
-    "60_40": {"annualized": 0.21, "cost_drag_bps": 2.1},
-    "FRAR": {"annualized": 4.74, "cost_drag_bps": 47.4},
-    "FRAR_Quad": {"annualized": 4.85, "cost_drag_bps": 48.5},
-    "Ungated_Sectors": {"annualized": 3.26, "cost_drag_bps": 32.6}
+    "SPY_BH": {
+      "annualized": 0.0,
+      "cost_drag_bps": 0.0
+    },
+    "60_40": {
+      "annualized": 0.21,
+      "cost_drag_bps": 2.1
+    },
+    "FRAR": {
+      "annualized": 2.3880263339625247,
+      "cost_drag_bps": 23.880263339625248
+    },
+    "FRAR_Quad": {
+      "annualized": 4.854526871987101,
+      "cost_drag_bps": 48.54526871987101
+    }
   },
   "regime_counts": {
-    "LOW": 127,
-    "MID": 49,
-    "HIGH": 30,
-    "CRISIS": 21
+    "LOW": 122,
+    "MID": 46,
+    "HIGH": 28,
+    "CRISIS": 18
   },
   "validation": {
     "status": "PASS",
-    "checks": ["data_integrity", "signal_consistency", "weight_sum"]
+    "checks": [
+      "data_integrity",
+      "signal_consistency",
+      "weight_sum"
+    ]
   },
   "parity_check": {
     "parity_status": "PASS",
     "parity_wins": 4,
     "parity_components": {
-      "sharpe": {"frar": 0.859, "benchmark": 0.559, "frar_wins": true},
-      "max_dd": {"frar": -0.261, "benchmark": -0.552, "frar_wins": true},
-      "cagr": {"frar": 0.1145, "benchmark": 0.1084, "frar_wins": true},
-      "calmar": {"frar": 0.438, "benchmark": 0.196, "frar_wins": true}
+      "sharpe": {
+        "frar": 0.8593280224584348,
+        "benchmark": 0.5366620448834452,
+        "frar_wins": true
+      },
+      "max_dd": {
+        "frar": -0.2611224852461207,
+        "benchmark": -0.55189445900176,
+        "frar_wins": true
+      },
+      "cagr": {
+        "frar": 0.1145000559591653,
+        "benchmark": 0.10398328278978819,
+        "frar_wins": true
+      },
+      "calmar": {
+        "frar": 0.43849175168214033,
+        "benchmark": 0.1884115361075886,
+        "frar_wins": true
+      }
     }
   }
 }
