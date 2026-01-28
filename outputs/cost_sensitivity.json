@@ -1,5 +1,4 @@
 {
-  "turnover_annualized": 4.742334873900784,
   "cost_levels_bps": [
     0,
     5,
@@ -12,52 +11,52 @@
   "rows": [
     {
       "cost_bps": 0,
-      "cagr": 0.096722,
-      "sharpe": 0.6708,
-      "max_dd": -0.2188,
-      "calmar": 0.4421
+      "cagr": 0.0947,
+      "sharpe": 0.654,
+      "max_dd": -0.3544871499712948,
+      "calmar": 0.267
     },
     {
       "cost_bps": 5,
-      "cagr": 0.094351,
-      "sharpe": 0.6544,
-      "max_dd": -0.22,
-      "calmar": 0.429
+      "cagr": 0.0934,
+      "sharpe": 0.645,
+      "max_dd": -0.3544871499712948,
+      "calmar": 0.264
     },
     {
       "cost_bps": 10,
-      "cagr": 0.09198,
-      "sharpe": 0.6379,
-      "max_dd": -0.2211,
-      "calmar": 0.4159
+      "cagr": 0.0922,
+      "sharpe": 0.637,
+      "max_dd": -0.3544871499712948,
+      "calmar": 0.26
     },
     {
       "cost_bps": 15,
-      "cagr": 0.089609,
-      "sharpe": 0.6215,
-      "max_dd": -0.2223,
-      "calmar": 0.4031
+      "cagr": 0.0909,
+      "sharpe": 0.628,
+      "max_dd": -0.3544871499712948,
+      "calmar": 0.256
     },
     {
       "cost_bps": 20,
-      "cagr": 0.087238,
-      "sharpe": 0.605,
-      "max_dd": -0.2235,
-      "calmar": 0.3903
+      "cagr": 0.0897,
+      "sharpe": 0.619,
+      "max_dd": -0.3544871499712948,
+      "calmar": 0.253
     },
     {
       "cost_bps": 25,
-      "cagr": 0.084867,
-      "sharpe": 0.5886,
-      "max_dd": -0.2247,
-      "calmar": 0.3777
+      "cagr": 0.0884,
+      "sharpe": 0.611,
+      "max_dd": -0.3544871499712948,
+      "calmar": 0.249
     },
     {
       "cost_bps": 30,
-      "cagr": 0.082495,
-      "sharpe": 0.5721,
-      "max_dd": -0.2259,
-      "calmar": 0.3652
+      "cagr": 0.0872,
+      "sharpe": 0.602,
+      "max_dd": -0.3544871499712948,
+      "calmar": 0.246
     }
   ]
 }

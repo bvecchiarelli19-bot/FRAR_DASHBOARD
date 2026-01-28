@@ -1,17 +1,17 @@
 {
-  "as_of_date": "2026-01-26",
-  "execution_date": "2026-01-27",
+  "as_of_date": "2026-01-27",
+  "execution_date": "2026-01-28",
   "regime": "LOW",
   "scalar": 1.0,
   "executable_weights": {
-    "XLK": 0.18,
-    "XLF": 0.15,
-    "XLI": 0.14,
-    "QQQ": 0.12,
-    "XLV": 0.10,
-    "XLE": 0.08,
-    "XLP": 0.08,
-    "SMH": 0.08,
-    "XLU": 0.07
+    "XLK": 0.1433,
+    "XLF": 0.1433,
+    "XLI": 0.1433,
+    "XLE": 0.1184,
+    "XLV": 0.1184,
+    "XLP": 0.0935,
+    "XLU": 0.0935,
+    "QQQ": 0.0731,
+    "SMH": 0.0731
   }
 }
