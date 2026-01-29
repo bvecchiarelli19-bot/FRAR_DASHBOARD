@@ -1,14 +1,15 @@
-FRAR Health Report - 2026-01-28 16:22:38
+FRAR Health Report - 2026-01-29 15:03:27
 ============================================================
-Signal Date: 2026-01-27
-FRAR Regime: LOW
+Signal Date: 2026-01-28
+FRAR Regime: MID
 Quad Regime: Q1 - Goldilocks
-Equity Allocation: 100%
+Equity Allocation: 80%
 
-Metrics:
-  CAGR: 9.47%
-  Sharpe: 0.654
-  Max DD: -35.4%
+Metrics (FRAR+Quad Net):
+  CAGR: 11.72%
+  Sharpe: 0.824
+  Max DD: -27.6%
+  Calmar: 0.424
 
 Validation: PASS
-Parity Check: PASS (3/4)
+Parity Check: PASS (4/4)
