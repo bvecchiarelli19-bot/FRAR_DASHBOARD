@@ -1,53 +1,53 @@
 {
-  "date": "2026-01-28",
+  "date": "2026-02-02",
   "quad": {
     "regime": 1,
     "regime_name": "Goldilocks",
     "confirmed": true,
     "confidence": "LOW",
-    "growth_signal": 0.0295,
-    "inflation_signal": -0.0629,
+    "growth_signal": 0.0096,
+    "inflation_signal": -0.0649,
     "growth_strength": "WEAK",
     "inflation_strength": "WEAK"
   },
   "frar": {
     "regime": "MID",
-    "risk_score": 0.5833,
-    "vol_percentile": 0.3376,
+    "risk_score": 0.583,
+    "vol_percentile": 0.3128,
     "hill_alpha": 2.03,
-    "hurst_exponent": 0.405,
+    "hurst_exponent": 0.3447,
     "equity_allocation": 0.8
   },
   "equity_portion": {
-    "QQQ": 0.1354,
-    "SMH": 0.1354,
-    "XLK": 0.1832,
-    "XLF": 0.0702,
-    "XLE": 0.0336,
-    "XLV": 0.0713,
-    "XLU": 0.0357,
-    "XLI": 0.1085
+    "QQQ": 0.1247,
+    "SMH": 0.1247,
+    "XLK": 0.1084,
+    "XLF": 0.1174,
+    "XLE": 0.031,
+    "XLV": 0.0656,
+    "XLU": 0.0328,
+    "XLI": 0.1866
   },
   "defensive_portion": {
-    "GLD": 0.0462,
-    "TLT": 0.1128,
-    "IEF": 0.0677
+    "GLD": 0.0426,
+    "IEF": 0.0623,
+    "TLT": 0.1039
   },
   "portfolio": {
-    "XLK": 0.1832,
-    "QQQ": 0.1354,
-    "SMH": 0.1354,
-    "TLT": 0.1128,
-    "XLI": 0.1085,
-    "XLV": 0.0713,
-    "XLF": 0.0702,
-    "IEF": 0.0677,
-    "GLD": 0.0462,
-    "XLU": 0.0357,
-    "XLE": 0.0336
+    "XLI": 0.1866,
+    "QQQ": 0.1247,
+    "SMH": 0.1247,
+    "XLF": 0.1174,
+    "XLK": 0.1084,
+    "TLT": 0.1039,
+    "XLV": 0.0656,
+    "IEF": 0.0623,
+    "GLD": 0.0426,
+    "XLU": 0.0328,
+    "XLE": 0.031
   },
   "summary": {
-    "total_equity": 0.7732,
-    "total_defensive": 0.2268
+    "total_equity": 0.7912,
+    "total_defensive": 0.2088
   }
 }

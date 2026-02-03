@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-01-29T15:03:27.843299",
+  "generated_at": "2026-02-03T19:37:15.317494",
   "version": "3.0",
-  "param_hash": "cf33e77858eab3b1",
-  "data_hash": "1852e9a51a7d",
-  "latest_signal_date": "2026-01-28",
+  "param_hash": "218beaf13188d7ba",
+  "data_hash": "5760453312c7",
+  "latest_signal_date": "2026-02-02",
   "backtest_start": "2006-01-01",
-  "backtest_end": "2026-01-28"
+  "backtest_end": "2026-02-02"
 }
